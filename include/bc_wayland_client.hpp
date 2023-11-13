@@ -3,6 +3,8 @@
 #include <wayland-client.h>
 #include <memory>
 #include "bicycle_engine.hpp"
+#include "memory/bc_wayland_shm.hpp"
+#include "bc_statistics.hpp"
 #include "xdg-shell-client-protocol.h"
 
 namespace bicycle_engine {
@@ -46,6 +48,10 @@ namespace bicycle_engine {
 
 	void Release(void *data, struct wl_buffer *wl_buffer);
 
+    void Format(void *data, struct wl_shm *wl_shm, uint32_t format);
+
+	void FrameDone(void *data, struct wl_callback *wl_callback, uint32_t callback_data);
+
     class WaylandClient : public GraphicsDevice<uint32_t> {
     public:
         WaylandClient(); 
@@ -73,10 +79,18 @@ namespace bicycle_engine {
                          struct xdg_wm_base *xdg_wm_base,
                          uint32_t serial);
 
+        friend void Format(void *data,
+                           struct wl_shm *wl_shm,
+		                   uint32_t format);
+
 	    friend void Release(void *data, struct wl_buffer *wl_buffer);
+
+	    friend void FrameDone(void *data, struct wl_callback *wl_callback, uint32_t callback_data);
     private:
         // @brief Draw frame
-        struct wl_buffer* draw_frame();
+        struct wl_buffer* get_frame();
+        // @brief request new frame callback
+        void request_new_frame_callback();
 
         std::unique_ptr<struct wl_display, DisplayDeleter> wc_display;
         // Wayland registry
@@ -95,12 +109,20 @@ namespace bicycle_engine {
         struct xdg_surface* xdg_surface;
         // XDG top level surface
         struct xdg_toplevel* xdg_toplevel;
+        // Frame callback
+        struct wl_callback* frame_cb;
 
         // Height
         int height;
         // Width
         int width;
+        // format
+        wl_shm_format data_format;
 
+        // Shared Memory
+        bicycle_engine::wayland::memory::SharedMemory shared_mem;
+        // For now will be used for frame counting
+        misc::statistics::Statistics stats;
         // Listeners
         // XDG listener
         struct xdg_surface_listener xdg_surface_listener = {
@@ -116,10 +138,20 @@ namespace bicycle_engine {
             .ping = Ping,
         };
 
+        // Format listener
+        struct wl_shm_listener wl_shm_listener = {
+            .format = Format,
+        };
         // Buffer listener
         struct wl_buffer_listener wl_buffer_listener = {
             .release = Release,
         };
+
+        // Frame listener
+        struct wl_callback_listener wl_surface_frame_listener = {
+            .done = FrameDone,
+        };
+
     };
 
 }

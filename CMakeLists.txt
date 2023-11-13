@@ -11,6 +11,7 @@ set(BC_PRIVATE_INC_DIRS include)
 set(BC_SRCS src/bicycle-engine.cpp
             src/bc-wayland-client.cpp
             src/bc-wayland-shm.cpp
+            src/bc-statistics.cpp
             src/xdg-shell-protocol.c)
 add_executable(bicycle_engine ${BC_SRCS})
 target_include_directories(bicycle_engine PRIVATE ${BC_PRIVATE_INC_DIRS})

@@ -66,7 +66,7 @@ namespace bicycle_engine::wayland::memory {
         ~SharedMemory();
     private:
         // @brief Generates shared memory file name of form /BC-Wayland-xxxxxx
-        static std::string generate_shm_file_name(uint32_t idx);
+        static const std::string generate_shm_file_name();
 
         // @brief Create shared file.
         //
@@ -81,7 +81,6 @@ namespace bicycle_engine::wayland::memory {
         int fd;
         size_t size;
         void* data;
-        std::string name;
     };
 }
 

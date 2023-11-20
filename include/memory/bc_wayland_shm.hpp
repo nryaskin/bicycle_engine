@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <string>
 #include <stdint.h>
+#include <format>
 #include <sys/mman.h>
 #include <wayland-client-protocol.h>
 
@@ -46,7 +47,7 @@ namespace bicycle_engine::wayland::memory {
         template<std::integral MemoryUnit>
         MemoryUnit& operator[](size_t index) {
            if (index >= size) {
-                //throw out of bound exception
+               throw std::out_of_range(std::format("Index: {} out of range: {}!", index, size));
            }
 
            return static_cast<MemoryUnit>(data)[index];

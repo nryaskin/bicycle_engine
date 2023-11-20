@@ -57,16 +57,21 @@ private:
 };
 
 int main() {
-    bc::WaylandClient wc;
-    wc.SetTitle("My Wayland Client Experiment!");
-    wc.Clear(0x0);
-
-    //Create cbb and update value in different thread.
-    CheckerBoardBackground cbb(1, 1, 8, 8, wc);
-    cbb.change_offset(0);
-
-    while(true) {
-        wc.Dispatch();
+    // NOTE: Dirty hack to always call stack unwinding on my not_implemented exceptions
+    try {
+        bc::WaylandClient wc;
+        wc.SetTitle("My Wayland Client Experiment!");
+//        wc.Clear(0x0);
+//
+//        //Create cbb and update value in different thread.
+//        CheckerBoardBackground cbb(1, 1, 8, 8, wc);
+//        cbb.change_offset(0);
+        while(true) {
+            wc.Dispatch();
+        }
+    }
+    catch (std::exception& e) {
+        std::cout << "Got exception" << e.what();
     }
     return 0;
 }

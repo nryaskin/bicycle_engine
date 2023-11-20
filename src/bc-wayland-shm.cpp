@@ -47,11 +47,10 @@ std::string SharedMemory::generate_shm_file_name(uint32_t idx) {
 
 SharedMemory::SharedMemory(size_t size): fd(-1), size(size), data(nullptr) {
     name = SharedMemory::generate_shm_file_name(SharedMemory::shared_file_idx++);
-    fd =  shm_open(name.c_str(), O_RDWR | O_CREAT | O_EXCL | O_TRUNC, 0600);
+    fd = shm_open(name.c_str(), O_RDWR | O_CREAT | O_EXCL | O_TRUNC, 0600);
 
     if (fd < 0) {
         std::filesystem::path p(name);
-        // Pass name to this exception
         throw error::ShmOpenException(p, errno);
     }
 
@@ -61,9 +60,10 @@ SharedMemory::SharedMemory(size_t size): fd(-1), size(size), data(nullptr) {
     }
 }
 
-// TODO: Update move constructor
-SharedMemory::SharedMemory(SharedMemory&& other) : fd(-1), name{""} {
+SharedMemory::SharedMemory(SharedMemory&& other) : fd(-1), size(0), data(nullptr), name{""} {
     std::swap(fd, other.fd);
+    std::swap(size, other.size);
+    std::swap(data, other.data);
     std::swap(name, other.name);
 }
 
@@ -71,9 +71,13 @@ SharedMemory::SharedMemory(SharedMemory&& other) : fd(-1), name{""} {
 SharedMemory& SharedMemory::operator=(SharedMemory&& other) {
     if (this != &other) {
         fd = other.fd;
+        size = other.size;
         name = other.name;
+        data = other.data;
 
         other.fd = -1;
+        other.size = 0;
+        other.data = nullptr;
         other.name = "";
     }
     return *this;
@@ -83,14 +87,16 @@ void SharedMemory::resize(size_t size_) {
     if (size == size_) {
         return;
     }
-    wrapper::munmap_data(data, size);
+    if (data && size) {
+        wrapper::munmap_data(data, size);
+    }
     size = size_;
     wrapper::ftruncate_data(fd, size); 
     data = (size) ? wrapper::map_data(fd, size) : nullptr;
 }
 
 SharedMemory::~SharedMemory() {
-    if (data) {
+    if (data && size > 0) {
         // No exceptions here so leaving simple munmap not wrapper
         munmap(data, size);
         data = nullptr;

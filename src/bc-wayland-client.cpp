@@ -8,7 +8,6 @@
 #include <sys/mman.h>
 #include <limits>
 #include <source_location>
-#include <cassert>
 
 namespace bcmem = bicycle_engine::wayland::memory;
 namespace bicycle_engine {
@@ -26,7 +25,7 @@ inline void info_log(const std::source_location& loc,
 
 // TODO: Try to add async version of this that uses fd from wl_display
 //       Use wl_display_get_fd to get file descriptor and when there is activity call wl_event_loop_dispatch.
-WaylandClient::WaylandClient() : wc_display(wl_display_connect(NULL), DisplayDeleter()), height(480), width(640), shared_mem(width * 4 * height)  {
+WaylandClient::WaylandClient() : wc_display(wl_display_connect(NULL), &wl_display_disconnect), height(0), width(0), shared_mem(0)  {
     if (!wc_display) {
         throw FailedToConnectWaylandException();
     }
@@ -38,17 +37,21 @@ WaylandClient::WaylandClient() : wc_display(wl_display_connect(NULL), DisplayDel
 
     wl_registry_add_listener(registry, &m_wc_registry_listener, this);
     // NOTE: We are blocking here until all pending request are processed by the server.
+    // We can do it here since we are filling alreadt initialized non-static members.
     wl_display_roundtrip(wc_display.get());
 
-
     surface = wl_compositor_create_surface(compositor);
+
     xdg_surface = xdg_wm_base_get_xdg_surface(xdg_wm_base, surface);
+
     xdg_surface_add_listener(xdg_surface, &xdg_surface_listener, this);
     xdg_toplevel = xdg_surface_get_toplevel(xdg_surface);
+
     wl_surface_commit(surface);
 
     frame_cb = wl_surface_frame(surface);
     wl_callback_add_listener(frame_cb, &wl_surface_frame_listener, this);
+
 }
 
 void WaylandClient::SetTitle(std::string&& title) {
@@ -90,6 +93,12 @@ void RegistryGlobal(void *data,
                                                 name,
                                                 &wl_seat_interface,
                                                 7));
+    } else if (std::strcmp(interface, wl_output_interface.name) == 0) {
+        wc->output = static_cast<struct wl_output*>(wl_registry_bind(wc->registry,
+                                              name,
+                                              &wl_output_interface,
+                                              4));
+        wl_output_add_listener(wc->output, &wc->wl_output_listener, wc);
     }
 }
 
@@ -102,8 +111,7 @@ void RegistryGlobalRemove(void *data,
 void XDGSurfaceConfigure(void *data,
                          struct xdg_surface *xdg_surface,
                          uint32_t serial) {
-    
-    bicycle_engine::info_log(std::source_location::current(), "");
+    bicycle_engine::info_log(std::source_location::current(), "serial: {}", serial);
     WaylandClient* wc = static_cast<WaylandClient*>(data);
     xdg_surface_ack_configure(wc->xdg_surface, serial);
 
@@ -119,24 +127,15 @@ void Ping(void *data, struct xdg_wm_base *xdg_wm_base, uint32_t serial) {
 void Format(void *data, struct wl_shm *wl_shm, uint32_t format) {
     bicycle_engine::info_log(std::source_location::current(), "Received format: {:#X}", format);
     WaylandClient* wc = static_cast<WaylandClient*>(data);
-    if (format == wl_shm_format::WL_SHM_FORMAT_ARGB8888
-        || format == wl_shm_format::WL_SHM_FORMAT_XRGB8888) {
-        wc->data_format = static_cast<wl_shm_format>(format);
-    }
-    else {
-        bicycle_engine::info_log(
-                std::source_location::current(),
-                "Unsupported format: {:#X}", format);
-        assert(false);
-    }
+    wc->data_formats.insert(static_cast<wl_shm_format>(format));
 }
 
 void Release(void *data, struct wl_buffer *wl_buffer) {
     wl_buffer_destroy(wl_buffer);
 }
-
                      
 void FrameDone(void *data, struct wl_callback *wl_callback, uint32_t callback_data) {
+    bicycle_engine::info_log(std::source_location::current(), "");
     WaylandClient* wc = static_cast<WaylandClient*>(data);
     wl_callback_destroy(wc->frame_cb);
 
@@ -161,14 +160,59 @@ void FrameDone(void *data, struct wl_callback *wl_callback, uint32_t callback_da
     bicycle_engine::info_log(std::source_location::current(), "Frames: {}", wc->stats.get_statistics());
 }
 
+void Geometry(void *data,
+              struct wl_output *wl_output,
+              int32_t x,
+              int32_t y,
+              int32_t physical_width,
+              int32_t physical_height,
+              int32_t subpixel,
+              const char *make,
+              const char *model,
+              int32_t transform) {
+    bicycle_engine::info_log( std::source_location::current(), "x: {}, y: {}, physical_width: {}, physical_height: {}" , x, y, physical_height, physical_width);
+}
+
+void Mode(void *data,
+	      struct wl_output *wl_output,
+	      uint32_t flags,
+	      int32_t width,
+	      int32_t height,
+	      int32_t refresh) {
+    bicycle_engine::info_log( std::source_location::current(), "flags: {:#X}, width: {}, height: {}, refresh: {}" , flags, width, height, refresh);
+    // Warning: This is not exactly correct solution but I am going to stick with this before refactoring to get MVP
+    auto wc = static_cast<bicycle_engine::WaylandClient *>(data);
+    wc->height = height;
+    wc->width = width;
+}
+
+void Done(void *data, struct wl_output *wl_output) {
+    bicycle_engine::info_log( std::source_location::current(), "");
+    auto wc = static_cast<bicycle_engine::WaylandClient *>(data);
+    wc->shared_mem.resize(wc->height * wc->width * 4);
+}
+
+void Scale(void *data,
+	       struct wl_output *wl_output,
+	       int32_t factor) {
+    bicycle_engine::info_log( std::source_location::current(), "factor: {}", factor);
+}
+
+void Name(void *data, struct wl_output *wl_output, const char *name) {
+    bicycle_engine::info_log( std::source_location::current(), "name: {}", name);
+}
+
+void Description(void *data, struct wl_output *wl_output, const char *description) {
+    bicycle_engine::info_log( std::source_location::current(), "description: {}", description);
+}
+
 // TODO: Return buffer which can be damaged
 struct wl_buffer* WaylandClient::get_frame() {
-#if 0
     int stride = width * 4;
     int size = stride * height;
-#endif
 
-    // TODO:we can get size from shared memory so not needed here.
+    // Note; For now creating here type with unique ptr because doesn't care about pool.
+
     struct wl_shm_pool *pool = wl_shm_create_pool(wl_shm, shared_mem.get_fd(), size);
 
     struct wl_buffer *buffer = wl_shm_pool_create_buffer(pool, 0,
@@ -186,7 +230,7 @@ void WaylandClient::request_new_frame_callback() {
 }
 
 void WaylandClient::Clear(uint32_t color) {
-    throw std::runtime_error("Not implemented yet!");
+    //throw std::runtime_error("Not implemented yet!");
 }
 
 void WaylandClient::DrawPixel(int x, int y, uint32_t color) {

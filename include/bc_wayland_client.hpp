@@ -2,6 +2,7 @@
 #define BICYCLE_ENGINE_WAYLAND_CLIENT_H
 #include <wayland-client.h>
 #include <memory>
+#include <set>
 #include "bicycle_engine.hpp"
 #include "memory/bc_wayland_shm.hpp"
 #include "bc_statistics.hpp"
@@ -52,6 +53,34 @@ namespace bicycle_engine {
 
 	void FrameDone(void *data, struct wl_callback *wl_callback, uint32_t callback_data);
 
+    void Geometry(void *data,
+                  struct wl_output *wl_output,
+                  int32_t x,
+                  int32_t y,
+                  int32_t physical_width,
+                  int32_t physical_height,
+                  int32_t subpixel,
+                  const char *make,
+                  const char *model,
+                  int32_t transform);
+
+    void Mode(void *data,
+		      struct wl_output *wl_output,
+		      uint32_t flags,
+		      int32_t width,
+		      int32_t height,
+		      int32_t refresh);
+
+    void Done(void *data, struct wl_output *wl_output);
+
+    void Scale(void *data,
+		       struct wl_output *wl_output,
+		       int32_t factor);
+
+    void Name(void *data, struct wl_output *wl_output, const char *name);
+
+    void Description(void *data, struct wl_output *wl_output, const char *description);
+
     class WaylandClient : public GraphicsDevice<uint32_t> {
     public:
         WaylandClient(); 
@@ -86,13 +115,38 @@ namespace bicycle_engine {
 	    friend void Release(void *data, struct wl_buffer *wl_buffer);
 
 	    friend void FrameDone(void *data, struct wl_callback *wl_callback, uint32_t callback_data);
+        friend void Geometry(void *data,
+                             struct wl_output *wl_output,
+                             int32_t x,
+                             int32_t y,
+                             int32_t physical_width,
+                             int32_t physical_height,
+                             int32_t subpixel,
+                             const char *make,
+                             const char *model,
+                             int32_t transform);
+
+        friend void Mode(void *data,
+                         struct wl_output *wl_output,
+                         uint32_t flags,
+                         int32_t width,
+                         int32_t height,
+                         int32_t refresh);
+
+        friend void Done(void *data, struct wl_output *wl_output);
+
+        friend void Scale(void *data,
+                          struct wl_output *wl_output,
+                          int32_t factor);
+
+        friend void Description(void *data, struct wl_output *wl_output, const char *description);
     private:
         // @brief Draw frame
         struct wl_buffer* get_frame();
         // @brief request new frame callback
         void request_new_frame_callback();
 
-        std::unique_ptr<struct wl_display, DisplayDeleter> wc_display;
+        std::unique_ptr<struct wl_display, decltype(&wl_display_disconnect)> wc_display;
         // Wayland registry
         wl_registry registry;  
         // Shared memory registry interface
@@ -111,13 +165,15 @@ namespace bicycle_engine {
         struct xdg_toplevel* xdg_toplevel;
         // Frame callback
         struct wl_callback* frame_cb;
+        // Wayland Output
+        struct wl_output* output;
 
         // Height
         int height;
         // Width
         int width;
-        // format
-        wl_shm_format data_format;
+        // Formats set that were provided to Format callback
+        std::set<wl_shm_format> data_formats;
 
         // Shared Memory
         bicycle_engine::wayland::memory::SharedMemory shared_mem;
@@ -133,6 +189,16 @@ namespace bicycle_engine {
             .global = RegistryGlobal,
             .global_remove = RegistryGlobalRemove
         };
+
+        struct wl_output_listener wl_output_listener = {
+            .geometry = Geometry,
+            .mode = Mode,
+            .done = Done,
+	        .scale = Scale,
+	        .name = Name,
+	        .description = Description,
+        };
+
         // WM base listener
         struct xdg_wm_base_listener xdg_wm_base_listener = {
             .ping = Ping,

@@ -6,31 +6,9 @@
 #include <format>
 #include <sys/mman.h>
 #include <wayland-client-protocol.h>
+#include "memory/bc_wayland_shm_file.hpp"
 
 namespace bicycle_engine::wayland::memory {
-    namespace wrapper {
-        // @brief map shared fd to memory region
-        //
-        // @param fd - open file descriptor
-        // @param size - size of required memory region
-        // @throws bicycle_engine::wayland::memory::error::ShmMmapException Thrown if underlying mmap failed due to any reason.
-        static void* map_data(int fd, size_t size);
-
-        // @brief unmap shared fd to memory region
-        //
-        // @param fd - open file descriptor
-        // @param size - size of required memory region
-        // @throws bicycle_engine::wayland::memory::error::ShmMunmapException Thrown if underlying mmap failed due to any reason.
-        static void munmap_data(int fd, size_t size);
-
-        // @brief truncates file descriptor of mapped memory region 
-        //
-        // @param fd - open file descriptor
-        // @param size - size of required memory region
-        // @throws bicycle_engine::wayland::memory::error::ShmTruncException Thrown if underlying ftrunc failed due to any reason.
-        static void ftruncate_data(int fd, size_t size);
-    };
-
     class SharedMemory {
     public:
         SharedMemory(size_t size = 0);
@@ -43,6 +21,16 @@ namespace bicycle_engine::wayland::memory {
 
         // resize shared memory region
         void resize(size_t size_);
+
+        // return memory size_
+        inline size_t get_size() const {
+            return size;
+        }
+
+        // return underlying file descriptor
+        inline SharedFile::file_descriptor_t get_fd() const {
+            return shared_file.get_fd();
+        }
 
         template<std::integral MemoryUnit>
         MemoryUnit& operator[](size_t index) {
@@ -59,26 +47,17 @@ namespace bicycle_engine::wayland::memory {
                 //throw out of bound exception
            }
 
-           return static_cast<MemoryUnit>(data)[index];
+           return static_cast<MemoryUnit*>(data)[index];
         }
 
-        int get_fd() const { return fd; }
         ~SharedMemory();
     private:
         // @brief Generates shared memory file name of form /BC-Wayland-xxxxxx
         static const std::string generate_shm_file_name();
+        SharedFile shared_file;
 
-        // @brief Create shared file.
-        //
-        // @param size - size of created file
-        static int create_shm_file(int size);
-
-
-        // Shared memory file idx
-        // I don't need it right now but if I am going to have
-        // more than one instantiation then it is better to synchronize it.
+        // TODO: Replace this with using random generated name later;
         static uint32_t shared_file_idx;
-        int fd;
         size_t size;
         void* data;
     };

@@ -18,7 +18,9 @@ set(BC_PRIVATE_INC_DIRS include)
 set(BC_SRCS src/bicycle-engine.cpp
             src/bc-wayland-client.cpp
             src/bc-wayland-shm.cpp
-            src/bc-statistics.cpp)
+            src/bc-statistics.cpp
+            src/bc-wayland-shm-file.cpp
+            src/bc-wayland-shm-pool.cpp)
 add_executable(bicycle_engine ${BC_SRCS})
 set_target_properties(bicycle_engine PROPERTIES LINKER_LANAGAGE CXX CXX_EXTENSIONS OFF)
 

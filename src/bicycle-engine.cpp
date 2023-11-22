@@ -56,9 +56,35 @@ private:
     gd_t&  graphics_device;
 };
 
+//
+// Ok, so I guess I need to block before enabling user with interaction with my grpahics_device
+// First of all, what do we need to start working with wayland properly
+//
+// 1. We need some interfaces to be prepared for us which are prepared with roundtrip function. (Already done, don't need to do anything)
+// 2. We need to query our environment on outputs and inputs and their capabilities which gives us depending on output ways to share buffers(TODO: Also I need to know what is going to happen in case of multiple output devices)
+//    In case of multiple outputs there is listener to handle surface getting on ouput so I guess depending on that output we can render parts of surface differently.
+//    I don't really get for now how wayland handles multiple outputs and one surface. can it provide different rendering depending on surface type or not?
+// 3. Query compositor on color byte format.
+//
+// After all of this we can return from blocking and start execution.
+//
+//
+// Ok, so we can do without quering output devices.
+// I guess there can be two approaches.
+// First, User can define required width and height of buffer.
+// We are going to query for formats and when we receive enough format callbacks we are going to create buffer and now it shall be possible to start work with wayland surface.
+// We are going to gather during execution information about joined new outputs and input if neccessary.
+//
+//
+
 int main() {
+    try {
     bc::WaylandClient wc;
     wc.SetTitle("My Wayland Client Experiment!");
+    // Possible Interface
+    // auto surface = wc.CreateSurfaceBuffer(height, width);
+    // surface.Clear();
+    // surface.DrawPixel();
 //    wc.Clear(0x0);
 //
 //    //Create cbb and update value in different thread.
@@ -66,6 +92,10 @@ int main() {
 //    cbb.change_offset(0);
     while(true) {
         wc.Dispatch();
+    }
+    }
+    catch (...) {
+        throw;
     }
     return 0;
 }

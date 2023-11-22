@@ -1,11 +1,11 @@
 #include "bc_wayland_client.hpp"
 #include "memory/bc_wayland_shm.hpp"
+#include "memory/bc_wayland_shm_pool.hpp"
 #include "bc_statistics.hpp"
 #include <format>
 #include <iostream>
 #include <cstring>
 #include <format>
-#include <sys/mman.h>
 #include <limits>
 #include <source_location>
 
@@ -25,7 +25,7 @@ inline void info_log(const std::source_location& loc,
 
 // TODO: Try to add async version of this that uses fd from wl_display
 //       Use wl_display_get_fd to get file descriptor and when there is activity call wl_event_loop_dispatch.
-WaylandClient::WaylandClient() : wc_display(wl_display_connect(NULL), &wl_display_disconnect), height(0), width(0), shared_mem(0)  {
+WaylandClient::WaylandClient() : wc_display(wl_display_connect(NULL), &wl_display_disconnect), height(0), width(0) {
     if (!wc_display) {
         throw FailedToConnectWaylandException();
     }
@@ -211,15 +211,12 @@ struct wl_buffer* WaylandClient::get_frame() {
     int stride = width * 4;
     int size = stride * height;
 
-    // Note; For now creating here type with unique ptr because doesn't care about pool.
-
-    struct wl_shm_pool *pool = wl_shm_create_pool(wl_shm, shared_mem.get_fd(), size);
-
-    struct wl_buffer *buffer = wl_shm_pool_create_buffer(pool, 0,
-            width, height, stride, WL_SHM_FORMAT_XRGB8888);
-
-    wl_shm_pool_destroy(pool);
-
+    auto shared_memory_pool = bcmem::SharedMemoryPool(wl_shm, shared_mem);
+    auto buffer = shared_memory_pool.create_buffer(0,
+                                                   width,
+                                                   height,
+                                                   stride,
+                                                   WL_SHM_FORMAT_XRGB8888);
     return buffer;
 }
 

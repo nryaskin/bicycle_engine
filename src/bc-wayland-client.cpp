@@ -8,21 +8,12 @@
 #include <format>
 #include <limits>
 #include <source_location>
+#include <logger/logger.hpp>
 
 namespace bcmem = bicycle_engine::wayland::memory;
+namespace bclog = bicycle_engine::logger;
+
 namespace bicycle_engine {
-
-void _log(std::string& location, std::string_view format_str, std::format_args args) {
-    std::cout << location << std::vformat(format_str, args) << "\n";
-}
-
-inline void info_log(const std::source_location& loc,
-                     std::string_view format_str,
-                     auto&& ...args) {
-    auto str = std::vformat("{}:{}({})>> ", std::make_format_args(loc.file_name(), loc.line(), loc.function_name()));
-    _log(str, format_str, std::make_format_args(args...));
-}
-
 // TODO: Try to add async version of this that uses fd from wl_display
 //       Use wl_display_get_fd to get file descriptor and when there is activity call wl_event_loop_dispatch.
 WaylandClient::WaylandClient() : wc_display(wl_display_connect(NULL), &wl_display_disconnect), height(0), width(0) {
@@ -65,9 +56,7 @@ void RegistryGlobal(void *data,
                     uint32_t name,
                     const char *interface,
                     uint32_t version) {
-    bicycle_engine::info_log(std::source_location::current(),
-                             "interface: {}, version {}, name: {}",
-                             interface, version, name);
+    bicycle_engine::logger::Logger("interface: {}, version {}, name: {}", interface, version, name);
 
     WaylandClient* wc = static_cast<WaylandClient*>(data);
 
@@ -111,7 +100,7 @@ void RegistryGlobalRemove(void *data,
 void XDGSurfaceConfigure(void *data,
                          struct xdg_surface *xdg_surface,
                          uint32_t serial) {
-    bicycle_engine::info_log(std::source_location::current(), "serial: {}", serial);
+    bclog::Logger("serial: {}", serial);
     WaylandClient* wc = static_cast<WaylandClient*>(data);
     xdg_surface_ack_configure(wc->xdg_surface, serial);
 
@@ -125,7 +114,7 @@ void Ping(void *data, struct xdg_wm_base *xdg_wm_base, uint32_t serial) {
 }
 
 void Format(void *data, struct wl_shm *wl_shm, uint32_t format) {
-    bicycle_engine::info_log(std::source_location::current(), "Received format: {:#X}", format);
+    bclog::Logger("Received format: {:#X}", format);
     WaylandClient* wc = static_cast<WaylandClient*>(data);
     wc->data_formats.insert(static_cast<wl_shm_format>(format));
 }
@@ -135,7 +124,7 @@ void Release(void *data, struct wl_buffer *wl_buffer) {
 }
                      
 void FrameDone(void *data, struct wl_callback *wl_callback, uint32_t callback_data) {
-    bicycle_engine::info_log(std::source_location::current(), "");
+    bclog::Logger();
     WaylandClient* wc = static_cast<WaylandClient*>(data);
     wl_callback_destroy(wc->frame_cb);
 
@@ -157,7 +146,7 @@ void FrameDone(void *data, struct wl_callback *wl_callback, uint32_t callback_da
                              std::numeric_limits<int32_t>::max(),
                              std::numeric_limits<int32_t>::max());
     wl_surface_commit(wc->surface);
-    bicycle_engine::info_log(std::source_location::current(), "Frames: {}", wc->stats.get_statistics());
+    bclog::Logger("Frames: {}", wc->stats.get_statistics());
 }
 
 void Geometry(void *data,
@@ -170,7 +159,7 @@ void Geometry(void *data,
               const char *make,
               const char *model,
               int32_t transform) {
-    bicycle_engine::info_log( std::source_location::current(), "x: {}, y: {}, physical_width: {}, physical_height: {}" , x, y, physical_height, physical_width);
+    bclog::Logger("x: {}, y: {}, physical_width: {}, physical_height: {}" , x, y, physical_height, physical_width);
 }
 
 void Mode(void *data,
@@ -179,7 +168,7 @@ void Mode(void *data,
 	      int32_t width,
 	      int32_t height,
 	      int32_t refresh) {
-    bicycle_engine::info_log( std::source_location::current(), "flags: {:#X}, width: {}, height: {}, refresh: {}" , flags, width, height, refresh);
+    bclog::Logger("flags: {:#X}, width: {}, height: {}, refresh: {}" , flags, width, height, refresh);
     // Warning: This is not exactly correct solution but I am going to stick with this before refactoring to get MVP
     auto wc = static_cast<bicycle_engine::WaylandClient *>(data);
     wc->height = height;
@@ -187,7 +176,7 @@ void Mode(void *data,
 }
 
 void Done(void *data, struct wl_output *wl_output) {
-    bicycle_engine::info_log( std::source_location::current(), "");
+    bclog::Logger();
     auto wc = static_cast<bicycle_engine::WaylandClient *>(data);
     wc->shared_mem.resize(wc->height * wc->width * 4);
 }
@@ -195,15 +184,15 @@ void Done(void *data, struct wl_output *wl_output) {
 void Scale(void *data,
 	       struct wl_output *wl_output,
 	       int32_t factor) {
-    bicycle_engine::info_log( std::source_location::current(), "factor: {}", factor);
+    bclog::Logger("factor: {}", factor);
 }
 
 void Name(void *data, struct wl_output *wl_output, const char *name) {
-    bicycle_engine::info_log( std::source_location::current(), "name: {}", name);
+    bclog::Logger("name: {}", name);
 }
 
 void Description(void *data, struct wl_output *wl_output, const char *description) {
-    bicycle_engine::info_log( std::source_location::current(), "description: {}", description);
+    bclog::Logger("description: {}", description);
 }
 
 // TODO: Return buffer which can be damaged
@@ -239,7 +228,5 @@ void WaylandClient::Dispatch() {
 }
 
 WaylandClient::~WaylandClient() {
-    bicycle_engine::info_log(std::source_location::current(),
-                             "FPS is: {}", stats.get_statistics());
 }
 }

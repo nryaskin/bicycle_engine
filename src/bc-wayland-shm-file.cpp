@@ -17,6 +17,8 @@ namespace bicycle_engine::wayland::memory {
             std::filesystem::path p(name);
             throw error::ShmOpenException(p, errno);
         }
+
+        shm_unlink(name.c_str());
     }
 
     // TODO: Make move constructor thread safe to guarantee const correctness.
@@ -51,10 +53,6 @@ namespace bicycle_engine::wayland::memory {
         if (fd >= 0) {
             close(fd);
             fd = -1;
-        }
-
-        if (name.size()) {
-            shm_unlink(name.c_str());
         }
     }
 }

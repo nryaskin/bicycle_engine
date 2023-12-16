@@ -12,9 +12,9 @@ namespace bicycle_engine {
     template<typename T>
     class GraphicsDevice {
     public:
-        virtual void Clear(T color) = 0;
-        void DrawPixel(point_t& p, T color) { DrawPixel(p.x, p.y, color); }
-        virtual void DrawPixel(int x, int y, T color) = 0;
+        virtual void clear(T color) = 0;
+        void draw_pixel(point_t& p, T color) { draw_pixel(p.x, p.y, color); }
+        virtual void draw_pixel(int x, int y, T color) = 0;
         virtual ~GraphicsDevice() {} 
     };
 };

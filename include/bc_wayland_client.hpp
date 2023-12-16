@@ -29,93 +29,43 @@ namespace bicycle_engine {
         }
     };
 
-    void RegistryGlobal(void *data,
-                        bicycle_engine::wl_registry registry,
-                        uint32_t name,
-                        const char *interface,
-                        uint32_t version);
-
-    void RegistryGlobalRemove(void *data,
-                              bicycle_engine::wl_registry registry,
-                              uint32_t name);
-
-    void XDGSurfaceConfigure(void *data,
-                             struct xdg_surface *xdg_surface,
-                             uint32_t serial);
-
-    void Ping(void *data,
-              struct xdg_wm_base *xdg_wm_base,
-              uint32_t serial);
-
-	void Release(void *data, struct wl_buffer *wl_buffer);
-
-    void Format(void *data, struct wl_shm *wl_shm, uint32_t format);
-
-	void FrameDone(void *data, struct wl_callback *wl_callback, uint32_t callback_data);
-
-    void Geometry(void *data,
-                  struct wl_output *wl_output,
-                  int32_t x,
-                  int32_t y,
-                  int32_t physical_width,
-                  int32_t physical_height,
-                  int32_t subpixel,
-                  const char *make,
-                  const char *model,
-                  int32_t transform);
-
-    void Mode(void *data,
-		      struct wl_output *wl_output,
-		      uint32_t flags,
-		      int32_t width,
-		      int32_t height,
-		      int32_t refresh);
-
-    void Done(void *data, struct wl_output *wl_output);
-
-    void Scale(void *data,
-		       struct wl_output *wl_output,
-		       int32_t factor);
-
-    void Name(void *data, struct wl_output *wl_output, const char *name);
-
-    void Description(void *data, struct wl_output *wl_output, const char *description);
 
     class WaylandClient : public GraphicsDevice<uint32_t> {
     public:
         WaylandClient(); 
-        void SetTitle(std::string&& title);
-        void Clear(uint32_t color) override;
-        void DrawPixel(int x, int y, uint32_t color) override;
-        void Dispatch();
+        void set_title(std::string&& title);
+        void clear(uint32_t color) override;
+        void draw_pixel(int x, int y, uint32_t color) override;
+        void dispatch();
         ~WaylandClient(); 
 
-        friend void RegistryGlobal(void *data,
-                                   wl_registry registry,
-                                   uint32_t name,
-                                   const char *interface,
-                                   uint32_t version);
+    private:
 
-        friend void RegistryGlobalRemove(void *data,
-                                         wl_registry registry,
-                                         uint32_t name);
+        static void registry_global(void *data,
+                                    bicycle_engine::wl_registry registry,
+                                    uint32_t name,
+                                    const char *interface,
+                                    uint32_t version);
 
-        friend void XDGSurfaceConfigure(void *data,
-                                        struct xdg_surface *xdg_surface,
-                                        uint32_t serial);
+        static void registry_global_remove(void *data,
+                                           bicycle_engine::wl_registry registry,
+                                           uint32_t name);
 
-        friend void Ping(void *data,
+        static void xdg_surface_configure(void *data,
+                                          struct xdg_surface *xdg_surface,
+                                          uint32_t serial);
+
+        static void ping(void *data,
                          struct xdg_wm_base *xdg_wm_base,
                          uint32_t serial);
 
-        friend void Format(void *data,
-                           struct wl_shm *wl_shm,
-		                   uint32_t format);
+        static void release(void *data, struct wl_buffer *wl_buffer);
 
-	    friend void Release(void *data, struct wl_buffer *wl_buffer);
+        static void format(void *data, struct wl_shm *wl_shm, uint32_t format);
 
-	    friend void FrameDone(void *data, struct wl_callback *wl_callback, uint32_t callback_data);
-        friend void Geometry(void *data,
+        static void frame_done(void *data, struct wl_callback *wl_callback, uint32_t callback_data);
+
+        static void geometry(void *data,
                              struct wl_output *wl_output,
                              int32_t x,
                              int32_t y,
@@ -126,21 +76,23 @@ namespace bicycle_engine {
                              const char *model,
                              int32_t transform);
 
-        friend void Mode(void *data,
+        static void mode(void *data,
                          struct wl_output *wl_output,
                          uint32_t flags,
                          int32_t width,
                          int32_t height,
                          int32_t refresh);
 
-        friend void Done(void *data, struct wl_output *wl_output);
+        static void done(void *data, struct wl_output *wl_output);
 
-        friend void Scale(void *data,
+        static void scale(void *data,
                           struct wl_output *wl_output,
                           int32_t factor);
 
-        friend void Description(void *data, struct wl_output *wl_output, const char *description);
-    private:
+        static void name(void *data, struct wl_output *wl_output, const char *name);
+
+        static void description(void *data, struct wl_output *wl_output, const char *description);
+
         // @brief Draw frame
         struct wl_buffer* get_frame();
         // @brief request new frame callback
@@ -182,40 +134,40 @@ namespace bicycle_engine {
         // Listeners
         // XDG listener
         struct xdg_surface_listener xdg_surface_listener = {
-            .configure = XDGSurfaceConfigure
+            .configure = WaylandClient::xdg_surface_configure
         };
         // Global listener
         struct wl_registry_listener m_wc_registry_listener = {
-            .global = RegistryGlobal,
-            .global_remove = RegistryGlobalRemove
+            .global        = WaylandClient::registry_global,
+            .global_remove = WaylandClient::registry_global_remove
         };
 
         struct wl_output_listener wl_output_listener = {
-            .geometry = Geometry,
-            .mode = Mode,
-            .done = Done,
-	        .scale = Scale,
-	        .name = Name,
-	        .description = Description,
+            .geometry     = WaylandClient::geometry,
+            .mode         = WaylandClient::mode,
+            .done         = WaylandClient::done,
+	        .scale        = WaylandClient::scale,
+	        .name         = WaylandClient::name,
+	        .description  = WaylandClient::description,
         };
 
         // WM base listener
         struct xdg_wm_base_listener xdg_wm_base_listener = {
-            .ping = Ping,
+            .ping = WaylandClient::ping,
         };
 
         // Format listener
         struct wl_shm_listener wl_shm_listener = {
-            .format = Format,
+            .format = WaylandClient::format,
         };
         // Buffer listener
         struct wl_buffer_listener wl_buffer_listener = {
-            .release = Release,
+            .release = WaylandClient::release,
         };
 
         // Frame listener
         struct wl_callback_listener wl_surface_frame_listener = {
-            .done = FrameDone,
+            .done = WaylandClient::frame_done,
         };
 
     };

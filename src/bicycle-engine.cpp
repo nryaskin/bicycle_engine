@@ -79,20 +79,14 @@ private:
 
 int main() {
     try {
-    bc::WaylandClient wc;
-    wc.SetTitle("My Wayland Client Experiment!");
-    // Possible Interface
-    // auto surface = wc.CreateSurfaceBuffer(height, width);
-    // surface.Clear();
-    // surface.DrawPixel();
-//    wc.Clear(0x0);
-//
-//    //Create cbb and update value in different thread.
-//    CheckerBoardBackground cbb(1, 1, 8, 8, wc);
-//    cbb.change_offset(0);
-    while(true) {
-        wc.Dispatch();
-    }
+        bc::WaylandClient wc;
+        wc.set_title("My Wayland Client Experiment!");
+
+#if 0
+        while(true) {
+            wc.dispatch();
+        }
+#endif
     }
     catch (...) {
         throw;

@@ -28,43 +28,43 @@ WaylandClient::WaylandClient() : wc_display(wl_display_connect(NULL), &wl_displa
 
     wl_registry_add_listener(registry, &m_wc_registry_listener, this);
     // NOTE: We are blocking here until all pending request are processed by the server.
-    // We can do it here since we are filling alreadt initialized non-static members.
+    // We can do it in constructor since we are filling already initialized non-static members.
     wl_display_roundtrip(wc_display.get());
 
+#define SURFACE_ENTITY
+#if !defined (SURFACE_ENTITY)
+// TODO: Move surface as different entity somewhere else,
+//       or control surface lifetime here but make it's creation by caused by external call.
     surface = wl_compositor_create_surface(compositor);
-
     xdg_surface = xdg_wm_base_get_xdg_surface(xdg_wm_base, surface);
-
     xdg_surface_add_listener(xdg_surface, &xdg_surface_listener, this);
     xdg_toplevel = xdg_surface_get_toplevel(xdg_surface);
-
     wl_surface_commit(surface);
-
     frame_cb = wl_surface_frame(surface);
     wl_callback_add_listener(frame_cb, &wl_surface_frame_listener, this);
-
+#endif /* !defined (SURFACE_ENTITY) */
 }
 
-void WaylandClient::SetTitle(std::string&& title) {
+void WaylandClient::set_title(std::string&& title) {
     if (xdg_toplevel) {
         xdg_toplevel_set_title(xdg_toplevel, title.c_str());
     }
 }
 
-void RegistryGlobal(void *data,
-                    bicycle_engine::wl_registry registry,
-                    uint32_t name,
-                    const char *interface,
-                    uint32_t version) {
+void WaylandClient::registry_global(void *data,
+                                    bicycle_engine::wl_registry registry,
+                                    uint32_t name,
+                                    const char *interface,
+                                    uint32_t version) {
     bicycle_engine::logger::Logger("interface: {}, version {}, name: {}", interface, version, name);
 
     WaylandClient* wc = static_cast<WaylandClient*>(data);
 
     if (std::strcmp(interface, wl_shm_interface.name) == 0) {
         wc->wl_shm = static_cast<struct wl_shm*>(wl_registry_bind(wc->registry,
-                                              name,
-                                              &wl_shm_interface,
-                                              1));
+                                                 name,
+                                                 &wl_shm_interface,
+                                                 1));
         wl_shm_add_listener(wc->wl_shm, &wc->wl_shm_listener, wc);
     } else if (std::strcmp(interface, wl_compositor_interface.name) == 0) {
         wc->compositor = static_cast<struct wl_compositor*>(wl_registry_bind(wc->registry,
@@ -91,15 +91,15 @@ void RegistryGlobal(void *data,
     }
 }
 
-void RegistryGlobalRemove(void *data,
-                          bicycle_engine::wl_registry registry,
-                          uint32_t name) {
+void WaylandClient::registry_global_remove(void *data,
+                                           bicycle_engine::wl_registry registry,
+                                           uint32_t name) {
 
 }
 
-void XDGSurfaceConfigure(void *data,
-                         struct xdg_surface *xdg_surface,
-                         uint32_t serial) {
+void WaylandClient::xdg_surface_configure(void *data,
+                                          struct xdg_surface *xdg_surface,
+                                          uint32_t serial) {
     bclog::Logger("serial: {}", serial);
     WaylandClient* wc = static_cast<WaylandClient*>(data);
     xdg_surface_ack_configure(wc->xdg_surface, serial);
@@ -109,21 +109,21 @@ void XDGSurfaceConfigure(void *data,
     wl_surface_commit(wc->surface);
 }
 
-void Ping(void *data, struct xdg_wm_base *xdg_wm_base, uint32_t serial) {
+void WaylandClient::ping(void *data, struct xdg_wm_base *xdg_wm_base, uint32_t serial) {
     xdg_wm_base_pong(xdg_wm_base, serial);
 }
 
-void Format(void *data, struct wl_shm *wl_shm, uint32_t format) {
+void WaylandClient::format(void *data, struct wl_shm *wl_shm, uint32_t format) {
     bclog::Logger("Received format: {:#X}", format);
     WaylandClient* wc = static_cast<WaylandClient*>(data);
     wc->data_formats.insert(static_cast<wl_shm_format>(format));
 }
 
-void Release(void *data, struct wl_buffer *wl_buffer) {
+void WaylandClient::release(void *data, struct wl_buffer *wl_buffer) {
     wl_buffer_destroy(wl_buffer);
 }
                      
-void FrameDone(void *data, struct wl_callback *wl_callback, uint32_t callback_data) {
+void WaylandClient::frame_done(void *data, struct wl_callback *wl_callback, uint32_t callback_data) {
     bclog::Logger();
     WaylandClient* wc = static_cast<WaylandClient*>(data);
     wl_callback_destroy(wc->frame_cb);
@@ -149,25 +149,25 @@ void FrameDone(void *data, struct wl_callback *wl_callback, uint32_t callback_da
     bclog::Logger("Frames: {}", wc->stats.get_statistics());
 }
 
-void Geometry(void *data,
-              struct wl_output *wl_output,
-              int32_t x,
-              int32_t y,
-              int32_t physical_width,
-              int32_t physical_height,
-              int32_t subpixel,
-              const char *make,
-              const char *model,
-              int32_t transform) {
+void WaylandClient::geometry(void *data,
+                             struct wl_output *wl_output,
+                             int32_t x,
+                             int32_t y,
+                             int32_t physical_width,
+                             int32_t physical_height,
+                             int32_t subpixel,
+                             const char *make,
+                             const char *model,
+                             int32_t transform) {
     bclog::Logger("x: {}, y: {}, physical_width: {}, physical_height: {}" , x, y, physical_height, physical_width);
 }
 
-void Mode(void *data,
-	      struct wl_output *wl_output,
-	      uint32_t flags,
-	      int32_t width,
-	      int32_t height,
-	      int32_t refresh) {
+void WaylandClient::mode(void *data,
+                         struct wl_output *wl_output,
+                         uint32_t flags,
+                         int32_t width,
+                         int32_t height,
+                         int32_t refresh) {
     bclog::Logger("flags: {:#X}, width: {}, height: {}, refresh: {}" , flags, width, height, refresh);
     // Warning: This is not exactly correct solution but I am going to stick with this before refactoring to get MVP
     auto wc = static_cast<bicycle_engine::WaylandClient *>(data);
@@ -175,23 +175,23 @@ void Mode(void *data,
     wc->width = width;
 }
 
-void Done(void *data, struct wl_output *wl_output) {
+void WaylandClient::done(void *data, struct wl_output *wl_output) {
     bclog::Logger();
     auto wc = static_cast<bicycle_engine::WaylandClient *>(data);
     wc->shared_mem.resize(wc->height * wc->width * 4);
 }
 
-void Scale(void *data,
-	       struct wl_output *wl_output,
-	       int32_t factor) {
+void WaylandClient::scale(void *data,
+                          struct wl_output *wl_output,
+                          int32_t factor) {
     bclog::Logger("factor: {}", factor);
 }
 
-void Name(void *data, struct wl_output *wl_output, const char *name) {
+void WaylandClient::name(void *data, struct wl_output *wl_output, const char *name) {
     bclog::Logger("name: {}", name);
 }
 
-void Description(void *data, struct wl_output *wl_output, const char *description) {
+void WaylandClient::description(void *data, struct wl_output *wl_output, const char *description) {
     bclog::Logger("description: {}", description);
 }
 
@@ -215,15 +215,15 @@ void WaylandClient::request_new_frame_callback() {
     wl_callback_add_listener(frame_cb, &wl_surface_frame_listener, this);
 }
 
-void WaylandClient::Clear(uint32_t color) {
+void WaylandClient::clear(uint32_t color) {
     //throw std::runtime_error("Not implemented yet!");
 }
 
-void WaylandClient::DrawPixel(int x, int y, uint32_t color) {
+void WaylandClient::draw_pixel(int x, int y, uint32_t color) {
     throw std::runtime_error("Not implemented yet");
 }
 
-void WaylandClient::Dispatch() {
+void WaylandClient::dispatch() {
     wl_display_dispatch(wc_display.get());
 }
 

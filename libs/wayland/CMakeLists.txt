@@ -36,17 +36,23 @@ function(GENERATE_WAYLAND_CODE)
 
     add_custom_command(OUTPUT ${HEADER}
         COMMAND ${WAYLAND_SCANNER} client-header ${GENERATE_WAYLAND_SCHEMA_PATH} ${HEADER}
-        DEPEND ${GENERATE_WAYLAND_SCHEMA_PATH})
+        DEPENDS ${GENERATE_WAYLAND_SCHEMA_PATH}
+        COMMENT "Generating Wayland client API header file")
     
     add_custom_command(OUTPUT ${SRC}
         COMMAND ${WAYLAND_SCANNER} private-code ${GENERATE_WAYLAND_SCHEMA_PATH} ${SRC}
-        DEPENDS ${GENERATE_WAYLAND_SCHEMA_PATH})
+        DEPENDS ${GENERATE_WAYLAND_SCHEMA_PATH}
+        COMMENT "Generating Wayland client private code")
 endfunction()
 
 generate_wayland_code(GEN_NAME wayland_client SCHEMA_PATH "${WAYLAND_SCHEMA}")
 generate_wayland_code(GEN_NAME xdg_client SCHEMA_PATH "${XDG_SHELL_SCHEMA}")
 
-add_library(wayland_api STATIC)
-target_sources(wayland_api PRIVATE "${WAYLAND_SRCS}")
-target_include_directories(wayland_api PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
-set_target_properties(wayland_api PROPERTIES LINKER_LANGUAGE C)
+add_library(wayland-api STATIC)
+# Header are private is a hack
+# If headers are public we will need them generated at cmake time and cannot
+# make use of customs command.
+target_sources(wayland-api PRIVATE "${WAYLAND_SRCS}"
+                           PRIVATE "${WAYLAND_HEADERS}")
+target_include_directories(wayland-api PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
+set_target_properties(wayland-api PROPERTIES LINKER_LANGUAGE C)

@@ -1,6 +1,6 @@
-#include "memory/bc_wayland_shm.hpp"
+#include "memory/bc-shm.hpp"
 #include "memory/bc_error.hpp"
-#include "memory/bc_wayland_shm_file.hpp"
+#include "memory/bc-shm-file.hpp"
 #include <format>
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -13,7 +13,7 @@ namespace {
     constexpr std::string WAYLAND_SHM_PREFIX = "/BC-Wayland";
 }
 
-namespace bicycle_engine::wayland::memory::wrapper {
+namespace bicycle_engine::memory::wrapper {
     void* map_data(int fd, size_t size) {
         auto data = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
         if (data == MAP_FAILED) {
@@ -30,7 +30,7 @@ namespace bicycle_engine::wayland::memory::wrapper {
     }
 }
 
-namespace bicycle_engine::wayland::memory {
+namespace bicycle_engine::memory {
 // Initialize it here, later think if it is good decision.
 uint32_t SharedMemory::shared_file_idx = 0;
 
@@ -44,7 +44,7 @@ SharedMemory::SharedMemory(size_t size): size(size), data(nullptr) {
 
     if (size) {
         shared_file.truncate(size);
-        wrapper::map_data(shared_file.get_fd(), size);
+        data = wrapper::map_data(shared_file.get_fd(), size);
     }
 }
 

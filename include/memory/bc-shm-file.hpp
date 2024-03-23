@@ -1,9 +1,9 @@
-#ifndef BC_WAYLAND_SHM_FILE_H
-#define BC_WAYLAND_SHM_FILE_H
+#ifndef BICYCLE_ENGINE_SHM_FILE_H
+#define BICYCLE_ENGINE_SHM_FILE_H
 
 #include <string>
 
-namespace bicycle_engine::wayland::memory {
+namespace bicycle_engine::memory {
     // Wrapper for managing shared files.
     class SharedFile {
     public:
@@ -26,4 +26,4 @@ namespace bicycle_engine::wayland::memory {
     };
 }
 
-#endif /* BC_WAYLAND_SHM_FILE_H */
+#endif /* BICYCLE_ENGINE_SHM_FILE_H */

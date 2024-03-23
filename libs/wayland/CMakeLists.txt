@@ -56,3 +56,4 @@ target_sources(wayland-api PRIVATE "${WAYLAND_SRCS}"
                            PRIVATE "${WAYLAND_HEADERS}")
 target_include_directories(wayland-api PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
 set_target_properties(wayland-api PROPERTIES LINKER_LANGUAGE C)
+target_link_libraries(wayland-api PUBLIC wayland-client)

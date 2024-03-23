@@ -1,4 +1,4 @@
-#include "memory/bc_wayland_shm_file.hpp"
+#include "memory/bc-shm-file.hpp"
 #include "memory/bc_error.hpp"
 #include "logger/logger.hpp"
 #include <sys/mman.h>
@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <filesystem>
 
-namespace bicycle_engine::wayland::memory {
+namespace bicycle_engine::memory {
     SharedFile::SharedFile(const std::string& name_) : fd {-1} , name {name_} {
         bicycle_engine::logger::Logger("shared file name: {}", name);
 

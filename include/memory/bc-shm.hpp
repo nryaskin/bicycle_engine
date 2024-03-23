@@ -1,14 +1,13 @@
-#ifndef BC_MEMORY_SHM_H
-#define BC_MEMORY_SHM_H
+#ifndef BICYCLE_ENGINE_MEMORY_BC_SHM_H
+#define BICYCLE_ENGINE_MEMORY_BC_SHM_H
 #include <stdexcept>
 #include <string>
 #include <stdint.h>
 #include <format>
 #include <sys/mman.h>
-#include <wayland-client-protocol.h>
-#include "memory/bc_wayland_shm_file.hpp"
+#include "memory/bc-shm-file.hpp"
 
-namespace bicycle_engine::wayland::memory {
+namespace bicycle_engine::memory {
     class SharedMemory {
     public:
         SharedMemory(size_t size = 0);
@@ -63,4 +62,4 @@ namespace bicycle_engine::wayland::memory {
     };
 }
 
-#endif /* BC_MEMORY_SHM_H */
+#endif /* BICYCLE_ENGINE_MEMORY_BC_SHM_H */

@@ -1,12 +1,12 @@
-#ifndef BC_MEMORY_ERROR_H
-#define BC_MEMORY_ERROR_H
+#ifndef BICYCLE_ENGINE_MEMORY_ERROR_H
+#define BICYCLE_ENGINE_MEMORY_ERROR_H
 #include <stdexcept>
 #include <filesystem>
 #include <format>
 #include <string>
 
 
-namespace bicycle_engine::wayland::memory::error {
+namespace bicycle_engine::memory::error {
     class ShmException : public std::exception {
     public:
         ShmException(int error_code_) : error_code(error_code_) {
@@ -65,4 +65,4 @@ namespace bicycle_engine::wayland::memory::error {
 }
 
 
-#endif /* BC_MEMORY_ERROR_H */
+#endif /* BICYCLE_ENGINE_MEMORY_ERROR_H */

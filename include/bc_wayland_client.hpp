@@ -3,10 +3,10 @@
 #include <memory>
 #include <unordered_map>
 
-#include "bc_wayland_surface.hpp"
 #include "memory/bc-shm.hpp"
 #include "memory/wayland/bc_wayland_shm_pool.hpp"
 #include "wayland/display.hpp"
+#include "wayland/surface.hpp"
 #include "wayland/interface/bc_wayland_shm.hpp"
 #include "wayland/interface/global_object_cache.hpp"
 

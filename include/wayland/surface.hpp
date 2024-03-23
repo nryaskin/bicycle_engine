@@ -1,6 +1,9 @@
 #ifndef BC_WAYLAND_SURFACE_H
 #define BC_WAYLAND_SURFACE_H
 
+#include <functional>
+#include <optional>
+
 #include "xdg_client_header.h"
 
 #include "bc_wayland_frame_callback.hpp"
@@ -8,9 +11,11 @@
 #include "wayland/display.hpp"
 #include "wayland/buffer.hpp"
 #include "wayland/region.hpp"
+#include "wayland/output.hpp"
 
 
 namespace bicycle_engine::wayland::surface {
+    
     /**
      * Wrapper aroung wayland wl_surface api.
      * NOTE: For now it is mix of wl_surface, xdg_surface and xdg_toplevel surface.
@@ -20,16 +25,24 @@ namespace bicycle_engine::wayland::surface {
      */
     class WLSurface {
     public:
-        using wl_surface_uptr = std::unique_ptr<struct wl_surface, decltype(&wl_surface_destroy)>;
+        using native_t = struct wl_surface;
+        using native_ptr_t = native_t *;
+        using surface_uptr = std::unique_ptr<struct wl_surface, decltype(&wl_surface_destroy)>;
+        using surface_listener_t = struct wl_surface_listener;
+        using surface_cb_t = std::function<void(Output*)>;
+        using preferred_buffer_scale_cb_t = std::function<void(int)>;
+        using preferred_buffer_transform_cb_t = std::function<void(enum wl_output_transform)>;
+
         WLSurface(struct wl_compositor* compositor, struct xdg_wm_base* xdg_wm_base);
         WLSurface(const WLSurface&) = delete;
         WLSurface& operator=(const WLSurface&) = delete;
+        // Requests
 
         // Set the surface content
         void attach(Buffer& buf);
 
         // Request frame throttling hint
-        void frame(FrameCallback& cb);
+        void frame(FrameCallback::user_frame_cb cb);
 
         // Set opaque region
         void set_opaque_region(Region& reg);
@@ -61,21 +74,49 @@ namespace bicycle_engine::wayland::surface {
          */
         void offset(int x, int y);
 
+        // Events
+        void set_enter_cb(surface_cb_t cb);
+
+        void set_leave_cb(surface_cb_t cb);
+
+        void set_preferred_buffer_scale(preferred_buffer_scale_cb_t cb);
+
+        void set_preferred_buffer_transform(preferred_buffer_transform_cb_t cb);
+
         ~WLSurface();
 
         friend class FrameCallback;
     private:
+        // xdg_surface events
         static void xdg_surface_configure(void *data,
                                           struct xdg_surface *xdg_surface,
                                           uint32_t serial);
+        // wl_surface events
+        static void enter_general_cb(void* data,
+                                     native_ptr_t surface,
+                                     output_native_ptr_t output);
+        static void leave_general_cb(void* data,
+                                     native_ptr_t surface,
+                                     output_native_ptr_t output);
+        static void scale_general_cb(void *data,
+                                     native_ptr_t wl_surface,
+                                     int32_t factor);
+        static void transform_general_cb(void *data,
+                                         native_ptr_t surface,
+                                         uint32_t transform);
 
+        std::optional<surface_cb_t> enter_cb;
+        std::optional<surface_cb_t> leave_cb;
+        std::optional<preferred_buffer_scale_cb_t> scale_cb;
+        std::optional<preferred_buffer_transform_cb_t> transform_cb;
         // Wayland surface
-        wl_surface_uptr surface;
+        surface_uptr surface;
         // XDG surface 
         struct xdg_surface* xdg_surface;
         // XDG top level surface
         struct xdg_toplevel* xdg_toplevel;
 
+        std::unique_ptr<surface_listener_t> surface_listener;
         // Listeners
         // XDG listener
         struct xdg_surface_listener xdg_surface_listener = {

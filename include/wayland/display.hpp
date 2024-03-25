@@ -2,14 +2,15 @@
 #define BE_WAYLAND_DISPLAY_HPP
 #include <memory>
 
-#include "noncopyable.hpp"
 #include "wayland_client_header.h"
+
+#include "noncopyable.hpp"
+#include "wayland/registry.hpp"
 
 namespace bicycle_engine::wayland {
     // wl_display object wrapper.
     class Display : public noncopyable {
     public:
-        using wl_registry_uptr = std::unique_ptr<struct wl_registry, decltype(&wl_registry_destroy)>;
         Display();
         Display(const std::string& display_name);
         Display(Display&&);
@@ -26,7 +27,7 @@ namespace bicycle_engine::wayland {
         int dispatch();
 
         // Get wl_registry object.
-        wl_registry_uptr get_registry();
+        Registry get_registry(std::map<std::string, Registry::user_registry_cb_t> cbs);
     private:
         Display(const char*);
         std::unique_ptr<struct wl_display, decltype(&wl_display_disconnect)> display_;

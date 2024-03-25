@@ -80,7 +80,7 @@ namespace bicycle_engine::wayland::surface {
 
     void WLSurface::enter_general_cb(void* data,
                                      native_ptr_t surface,
-                                     output_native_ptr_t output) {
+                                     Output::native_ptr_t output) {
         auto surface_ = static_cast<WLSurface *>(data);
         if (surface_->enter_cb) {
             surface_->enter_cb.value()(output);
@@ -89,7 +89,7 @@ namespace bicycle_engine::wayland::surface {
 
     void WLSurface::leave_general_cb(void* data,
                                      native_ptr_t surface,
-                                     output_native_ptr_t output) {
+                                     Output::native_ptr_t output) {
         auto surface_ = static_cast<WLSurface *>(data);
         if (surface_->leave_cb) {
             surface_->leave_cb.value()(output);

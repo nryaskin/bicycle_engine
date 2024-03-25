@@ -29,7 +29,7 @@ namespace bicycle_engine::wayland::surface {
         using native_ptr_t = native_t *;
         using surface_uptr = std::unique_ptr<struct wl_surface, decltype(&wl_surface_destroy)>;
         using surface_listener_t = struct wl_surface_listener;
-        using surface_cb_t = std::function<void(Output*)>;
+        using surface_cb_t = std::function<void(Output::native_ptr_t)>;
         using preferred_buffer_scale_cb_t = std::function<void(int)>;
         using preferred_buffer_transform_cb_t = std::function<void(enum wl_output_transform)>;
 
@@ -94,10 +94,10 @@ namespace bicycle_engine::wayland::surface {
         // wl_surface events
         static void enter_general_cb(void* data,
                                      native_ptr_t surface,
-                                     output_native_ptr_t output);
+                                     Output::native_ptr_t output);
         static void leave_general_cb(void* data,
                                      native_ptr_t surface,
-                                     output_native_ptr_t output);
+                                     Output::native_ptr_t output);
         static void scale_general_cb(void *data,
                                      native_ptr_t wl_surface,
                                      int32_t factor);

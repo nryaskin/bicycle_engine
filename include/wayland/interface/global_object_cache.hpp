@@ -17,6 +17,15 @@ namespace bicycle_engine::wayland::interface {
             };
             
             GlobalObjectCache() {}
+            GlobalObjectCache(GlobalObjectCache&& other) {
+                *this = std::move(other);
+            }
+
+            GlobalObjectCache& operator=(GlobalObjectCache&& other) {
+                std::swap(num_to_interface, other.num_to_interface);
+                std::swap(name_to_interface, other.name_to_interface);
+                return *this;
+            }
 
             void add(std::string interface, numeric_name_t name, version_t version) {
                 // TODO: Think about synchronization. For now I think there is no need since we are going to call wayland loop at least for this objects from one thread.

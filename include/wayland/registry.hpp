@@ -8,6 +8,7 @@
 
 #include "xdg_client_header.h"
 
+#include "noncopyable.hpp"
 #include "wayland/interface.hpp"
 #include "wayland/interface/global_object_cache.hpp"
 
@@ -23,7 +24,7 @@ namespace bicycle_engine::wayland {
         FailedToGetRegistryException() : std::runtime_error::runtime_error("Failed to Wayland registry") {}
     };
 
-    class Registry : noncopyable {
+    class Registry : noncopyable, std::enable_shared_from_this<Registry> {
     public:
         using native_t = struct wl_registry;
         using native_ptr_t = native_t *;
@@ -31,14 +32,16 @@ namespace bicycle_engine::wayland {
         using registry_uptr = std::unique_ptr<native_t, decltype(&wl_registry_destroy)>;
         using compositor_uptr = std::unique_ptr<struct wl_compositor, decltype(&wl_compositor_destroy)>;
         using xdg_wm_base_uptr = std::unique_ptr<struct xdg_wm_base, decltype(&xdg_wm_base_destroy)>;
+        using xdg_wm_base_listener_t = struct xdg_wm_base_listener;
         using registry_listener_t = struct wl_registry_listener;
         using user_registry_cb_t = std::function<void(Registry&, uint32_t, const wl_interface_t *interface, uint32_t)>;
 
+    private:
         Registry(native_ptr_t wl_registry, std::map<std::string, user_registry_cb_t> cbs);
 
-        Registry();
-        Registry(Registry&&);
-        Registry& operator=(Registry&&);
+    public:
+
+        static std::shared_ptr<Registry> create(native_ptr_t wl_registry, std::map<std::string, user_registry_cb_t> cbs);
 
         template<typename T, typename Deleter>
         std::unique_ptr<T, Deleter> bind(uint32_t name,
@@ -70,9 +73,6 @@ namespace bicycle_engine::wayland {
 
         static void swap(registry_uptr& reg1, registry_uptr& reg2);
 
-        static void set_registry(native_ptr_t wl_registry, Registry* registry);
-        static Registry* get_registry(native_ptr_t wl_registry);
-
         // Wayland registry
         registry_uptr registry;
 
@@ -85,10 +85,13 @@ namespace bicycle_engine::wayland {
         interface::GlobalObjectCache go_cache;
 
         // Global listener
-        std::unique_ptr<registry_listener_t> registry_listener;
+        registry_listener_t registry_listener = {
+            .global = Registry::registry_global,
+            .global_remove = Registry::registry_global_remove,
+        };
 
         // WM base listener
-        struct xdg_wm_base_listener xdg_wm_base_listener = {
+        xdg_wm_base_listener_t xdg_wm_base_listener = {
             .ping = Registry::ping,
         };
 

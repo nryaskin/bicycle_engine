@@ -27,7 +27,7 @@ namespace bicycle_engine::wayland {
         int dispatch();
 
         // Get wl_registry object.
-        Registry get_registry(std::map<std::string, Registry::user_registry_cb_t> cbs);
+        std::shared_ptr<Registry> get_registry(std::map<std::string, Registry::user_registry_cb_t> cbs);
     private:
         Display(const char*);
         std::unique_ptr<struct wl_display, decltype(&wl_display_disconnect)> display_;

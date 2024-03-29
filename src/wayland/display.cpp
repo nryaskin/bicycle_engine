@@ -8,10 +8,10 @@ namespace bicycle_engine::wayland {
     Display::Display(const char* display_name) : display_(wl_display_connect(display_name), wl_display_disconnect) {
     }
 
-    Registry Display::get_registry(std::map<std::string, Registry::user_registry_cb_t> cbs) {
-        auto registry = std::move(Registry(wl_display_get_registry(display_.get()), cbs));
+    std::shared_ptr<Registry> Display::get_registry(std::map<std::string, Registry::user_registry_cb_t> cbs) {
+        auto registry = Registry::create(wl_display_get_registry(display_.get()), cbs);
         roundtrip();
-        return std::move(registry);
+        return registry;
     }
 
     int Display::roundtrip() { return wl_display_roundtrip(display_.get()); }

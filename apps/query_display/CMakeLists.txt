@@ -1,0 +1,4 @@
+set(SHOWCASE_SRCS main.cpp)
+add_executable(query_display ${SHOWCASE_SRCS})
+target_link_libraries(query_display PRIVATE bicycle_engine)
+target_compile_features(query_display PUBLIC cxx_std_20)

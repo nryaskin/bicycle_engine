@@ -1,1 +1,1 @@
-add_subdirectory(showcase)
+add_subdirectory(query_display)

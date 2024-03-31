@@ -1,1 +1,2 @@
 add_subdirectory(query_display)
+add_subdirectory(show_image)

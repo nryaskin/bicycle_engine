@@ -35,13 +35,14 @@ namespace bicycle_engine::wayland {
         using xdg_wm_base_listener_t = struct xdg_wm_base_listener;
         using registry_listener_t = struct wl_registry_listener;
         using user_registry_cb_t = std::function<void(Registry&, uint32_t, const wl_interface_t *interface, uint32_t)>;
+        using user_callback_map_t = std::map<std::string, user_registry_cb_t>;
 
     private:
-        Registry(native_ptr_t wl_registry, std::map<std::string, user_registry_cb_t> cbs);
+        Registry(native_ptr_t wl_registry, std::map<std::string, user_registry_cb_t>& cbs);
 
     public:
 
-        static std::shared_ptr<Registry> create(native_ptr_t wl_registry, std::map<std::string, user_registry_cb_t> cbs);
+        static std::shared_ptr<Registry> create(native_ptr_t wl_registry, std::map<std::string, user_registry_cb_t>& cbs);
 
         template<typename T, typename Deleter>
         std::unique_ptr<T, Deleter> bind(uint32_t name,
@@ -95,7 +96,7 @@ namespace bicycle_engine::wayland {
             .ping = Registry::ping,
         };
 
-        std::map<std::string, user_registry_cb_t> user_registry_cbs;
+        std::map<std::string, user_registry_cb_t>& user_registry_cbs;
     };
 
 

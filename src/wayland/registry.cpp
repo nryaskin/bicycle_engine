@@ -17,11 +17,11 @@ namespace belog = bicycle_engine::logger;
 
 namespace bicycle_engine::wayland {
 
-std::shared_ptr<Registry> Registry::create(native_ptr_t wl_registry, std::map<std::string, user_registry_cb_t> cbs) {
+std::shared_ptr<Registry> Registry::create(native_ptr_t wl_registry, std::map<std::string, user_registry_cb_t>& cbs) {
     return std::shared_ptr<Registry>(new Registry(wl_registry, cbs));
 }
 
-Registry::Registry(native_ptr_t wl_registry, std::map<std::string, user_registry_cb_t> cbs) :
+Registry::Registry(native_ptr_t wl_registry, std::map<std::string, user_registry_cb_t>& cbs) :
     registry(wl_registry, wl_registry_destroy),
     compositor(nullptr, wl_compositor_destroy),
     xdg_wm_base(nullptr, xdg_wm_base_destroy),
@@ -61,7 +61,8 @@ void Registry::registry_global_remove(void *data,
     auto registry = static_cast<Registry *>(data);
 
     // Here before if we can block by mutex
-    //TODO: Send remove to created object. I think for this I will need to do some internal bind
+    //TODO: Send remove to created object.
+    //      For now since it is just learning project I am not going to bother.
     registry->go_cache.remove(name);
 }
 

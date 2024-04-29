@@ -8,7 +8,11 @@ project(BicycleEngine
 include(cmake/checks.cmake)
 check_not_source()
 
+set(BUILD_EXPERIMENTS ON CACHE BOOL "Build experiments libraries?")
+
 add_subdirectory(libs)
 add_subdirectory(src)
 add_subdirectory(apps)
-add_subdirectory(experiments)
+if (BUILD_EXPERIMENTS)
+    add_subdirectory(experiments)
+endif()

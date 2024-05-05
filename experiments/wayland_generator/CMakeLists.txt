@@ -8,7 +8,8 @@ set(WAYLAND_GEN_SRCS
     cpp/class.cpp
     cpp/function.cpp
     cpp/namespace.cpp
-    cpp/simple_decl.cpp)
+    cpp/simple_decl.cpp
+    cpp/type.cpp)
 
 add_executable(waylandcpp_generator)
 target_sources(waylandcpp_generator PRIVATE ${WAYLAND_GEN_SRCS})

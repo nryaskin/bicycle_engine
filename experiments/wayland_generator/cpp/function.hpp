@@ -9,24 +9,26 @@
 namespace cpp {
     class Parameter {
     public:
-        Parameter(Type type, std::string name = "") : type(type), name(name) {}
+        Parameter(type_t type, std::string name = "", std::string default_init = "") :
+            type(type), name(name), default_init(default_init) {}
 
         // TODO: I think can replace all of this with format or something like that to use with vformat at least.
         std::string to_string() const;
     private:
-        Type type;
+        type_t type;
         std::string name;
+        std::string default_init;
     };
 
     class Function {
     public:
         template<typename ...Param>
-        Function(std::string name, Type return_type, Param... param)
+        Function(std::string name, type_t return_type, Param... param)
         : Function(name, return_type) {
             (parameters.push_back(param),...);
         }
 
-        Function(std::string name, Type return_type) : name(name), return_type(return_type) {}
+        Function(std::string name, type_t return_type) : name(name), return_type(return_type) {}
         void add_parameter(Parameter parameter) {
             parameters.push_back(parameter);
         }
@@ -35,7 +37,7 @@ namespace cpp {
 
     private:
         std::string name;
-        Type return_type;
+        type_t return_type;
         std::vector<Parameter> parameters;
     };
 }

@@ -8,13 +8,15 @@
 namespace cpp {
     class SimpleDeclaration {
     public:
-        SimpleDeclaration(Type, const std::string&);
+        SimpleDeclaration(type_t, const std::string&);
+        SimpleDeclaration(type_t type, const std::string& id, const std::string& initializer);
 
         std::string to_string() const;
 
     private:
-        Type        type_;
+        type_t      type_;
         std::string id_;
+        std::string initializer_;
     };
 }
 

@@ -39,13 +39,27 @@ namespace cpp {
 
     class Class : public Container<SimpleDeclaration, AccessModifier, Method> {
     public:
+        class Ctr {
+        public:
+            void add(Parameter p) {
+                parameters.push_back(p);
+            }
+        
+            std::string to_string() const;
+        private:
+            std::vector<Parameter> parameters;
+        };
+
         Class(const std::string& name);
+        void add_ctr(Ctr ctr);
+        std::string to_string() const;
+
+    private:
 
         ClassKey class_key = ClassKey::CLASS;
         std::string class_head_name;
         std::vector<std::pair<InheritanceModel, Class>> base_clause;
-
-        std::string to_string() const;
+        std::vector<Ctr> constructors;
     };
 }
 #endif /* CPP_CLASS_H */

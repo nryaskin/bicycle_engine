@@ -5,6 +5,22 @@
 namespace cpp {
     Class::Class(const std::string& name) : class_head_name(name) {}
 
+    std::string Class::Ctr::to_string() const {
+        bool comma = false;
+        std::stringstream ss;
+        for (const auto& param: parameters) {
+            ss << (comma? ", " : "") << param.to_string();
+            comma = true;
+        }
+
+        return ss.str();
+    }
+
+
+    void Class::add_ctr(Ctr ctr) {
+        constructors.push_back(ctr);
+    }
+
     std::string Class::to_string() const {
         std::stringstream ss;
 
@@ -27,6 +43,10 @@ namespace cpp {
             }
         }
         ss << "{\n";
+
+        for (const auto& ctr : constructors) {
+            ss << class_head_name << "(" << ctr.to_string() << ");\n";
+        }
 
         for (const auto& decl: container) {
             std::visit([&ss](auto&& object) {

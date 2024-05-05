@@ -92,6 +92,10 @@ int main () {
     cpp::Type wire_op_type("wire_op_t");
     cpp::Type void_type("void");
     cpp::Type wire_new_id_type("wire_new_id_t");
+    cpp::Type sock_type("WLSocket");
+    cpp::Ref  sock_type_ref(sock_type);
+    cpp::Type string_type("std::string");
+    cpp::RRef string_type_rref(string_type);
 
     cpp::Header cppfile("display");
     cpp::QuoteInclusion wire_include;
@@ -100,9 +104,17 @@ int main () {
     cppfile.add_include(wire_include);
     cpp::Namespace ns("wayland");
     cpp::Class cl("Display");
-    cpp::SimpleDeclaration id(wire_object_id_type, "id_");
-    cpp::SimpleDeclaration sync_op(wire_op_type, "sync_op");
-    cpp::SimpleDeclaration get_reg_op(wire_op_type, "get_registry_op");
+    cpp::Class::Ctr display_ctr;
+    cpp::Parameter socket_param(sock_type_ref, "s");
+    cpp::Parameter name_param(string_type_rref, "name", "= \"\"");
+    display_ctr.add(socket_param);
+    display_ctr.add(name_param);
+    cl.add_ctr(display_ctr);
+
+    cpp::SimpleDeclaration id(wire_object_id_type, "id_", "= 1");
+    cpp::SimpleDeclaration sync_op(wire_op_type, "sync_op", "= 0x0000");
+    cpp::SimpleDeclaration get_reg_op(wire_op_type, "get_registry_op", "= 0x0001");
+
     cl.add(id);
     cl.add(sync_op);
     cl.add(get_reg_op);
@@ -113,6 +125,9 @@ int main () {
     cpp::Parameter reg_id(wire_new_id_type, "registry_id");
     method.add_parameter(reg_id);
     cl.add(method);
+    cl.add(cpp::AccessModifier(cpp::access_modifier_t::PRIVATE));
+    cpp::SimpleDeclaration socket_field(sock_type_ref, "s");
+    cl.add(socket_field);
 
     ns.add(cl);
     cppfile.add(ns);

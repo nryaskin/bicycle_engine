@@ -13,6 +13,7 @@
 #include "cpp/type.hpp"
 #include "cpp/namespace.hpp"
 #include "cpp/class.hpp"
+#include "cpp/enum.hpp"
 
 namespace pt = boost::property_tree;
 
@@ -90,6 +91,7 @@ int main () {
 
     cpp::Type wire_object_id_type("wire_object_id_t");
     cpp::Type wire_op_type("wire_op_t");
+    cpp::Type wire_uint_type("wire_uint_t");
     cpp::Type void_type("void");
     cpp::Type wire_new_id_type("wire_new_id_t");
     cpp::Type sock_type("WLSocket");
@@ -97,11 +99,11 @@ int main () {
     cpp::Type string_type("std::string");
     cpp::RRef string_type_rref(string_type);
 
-    cpp::Header cppfile("display");
+    cpp::Header display_header("display");
     cpp::QuoteInclusion wire_include;
     wire_include.file = "wire_types.hpp";
 
-    cppfile.add_include(wire_include);
+    display_header.add_include(wire_include);
     cpp::Namespace ns("wayland");
     cpp::Class cl("Display");
     cpp::Class::Ctr display_ctr;
@@ -120,19 +122,45 @@ int main () {
     cl.add(get_reg_op);
     cl.add(cpp::AccessModifier(cpp::access_modifier_t::PUBLIC));
 
+    cpp::Enum error_enum("error", wire_uint_type);
+    error_enum.add(cpp::Enum::Entity("INVALID_OBJECT", "0"));
+    error_enum.add(cpp::Enum::Entity("INVALID_METHOD", "1"));
+    error_enum.add(cpp::Enum::Entity("NO_MEMORY", "2"));
+    error_enum.add(cpp::Enum::Entity("IMPLEMENTATION", "3"));
+
+    cl.add(error_enum);
+
     //  void get_registry(wire_new_id_t registry_id); 
-    cpp::Method method("get_registry", void_type);
+    cpp::Method get_reg_method("get_registry", void_type);
     cpp::Parameter reg_id(wire_new_id_type, "registry_id");
-    method.add_parameter(reg_id);
-    cl.add(method);
+    get_reg_method.add_parameter(reg_id);
+    cl.add(get_reg_method);
     cl.add(cpp::AccessModifier(cpp::access_modifier_t::PRIVATE));
     cpp::SimpleDeclaration socket_field(sock_type_ref, "s");
     cl.add(socket_field);
 
     ns.add(cl);
-    cppfile.add(ns);
+    display_header.add(ns);
 
-    std::cout << "File:\n" << cppfile.to_string() << "\nEnd File" << std::endl;
+    std::cout << "Header[" << display_header.get_name() <<  "]\n" << display_header.to_string() << "\nEnd File" << std::endl;
+
+    cpp::Source display_source("display");
+    display_source.set_namespace(ns);
+    cpp::MethodBody reg_meth_body;
+    reg_meth_body.add("WireObjectBuilder builder(id, get_registry_op);");
+    reg_meth_body.add("builder.add(registry_id);");
+    reg_meth_body.add("s_.write(builder.data(), builder.size());");
+    cpp::Definition get_reg_def(cl, get_reg_method, reg_meth_body);
+    display_source.add(get_reg_def);
+
+    std::cout << "Source:[" << display_source.get_name() << "]\n" << display_source.to_string() << "\nEnd File" << std::endl;
+//    void get_registry(wire_new_id_t registry_id) {
+//        WireObjectBuilder builder(id, get_registry_op);
+//        builder.add_new_id(registry_id);
+//        builder.print();
+//        s_.write(builder.data(), builder.size());
+//    }
+
 
     return 0;
 }

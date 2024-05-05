@@ -2,6 +2,7 @@
 #define WAYLAND_GENERATOR_WIRE_TYPE_H
 
 #include <cstdint>
+#include <concepts>
 
 using wire_word_t = uint32_t;
 using wire_int_t = int32_t;

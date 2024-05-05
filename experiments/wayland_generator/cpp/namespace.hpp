@@ -20,6 +20,8 @@ namespace cpp {
 
         std::string to_string() const;
 
+        friend class Definition;
+        friend class Source;
     private:
         std::string get_body() const;
         std::string id_ = "";

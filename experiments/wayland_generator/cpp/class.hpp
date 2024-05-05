@@ -8,10 +8,12 @@
 #include "simple_decl.hpp"
 #include "access_mod.hpp"
 #include "function.hpp" 
+#include "enum.hpp"
 #include "container.hpp"
 
 namespace cpp {
     using Method = Function;
+    class Definition;
 
     enum class InheritanceModel {
         PUBLIC,
@@ -37,7 +39,7 @@ namespace cpp {
         UNION
     };
 
-    class Class : public Container<SimpleDeclaration, AccessModifier, Method> {
+    class Class : public Container<SimpleDeclaration, AccessModifier, Method, Enum> {
     public:
         class Ctr {
         public:
@@ -46,6 +48,8 @@ namespace cpp {
             }
         
             std::string to_string() const;
+
+            friend class Definition;
         private:
             std::vector<Parameter> parameters;
         };
@@ -53,9 +57,9 @@ namespace cpp {
         Class(const std::string& name);
         void add_ctr(Ctr ctr);
         std::string to_string() const;
+        friend class Definition;
 
     private:
-
         ClassKey class_key = ClassKey::CLASS;
         std::string class_head_name;
         std::vector<std::pair<InheritanceModel, Class>> base_clause;

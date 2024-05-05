@@ -39,4 +39,21 @@ namespace cpp {
 
         return header;
     }
+
+
+    void Source::add(Definition def) {
+        definitions.push_back(def);
+    }
+
+    std::string Source::to_string() const {
+        std::string source = File::to_string();
+        source.append(std::format("{} {} {{\n", Namespace::keyword, ns_.id_));
+        for (const auto& def : definitions) {
+            source.append(def.to_string());
+            source.append("\n");
+        }
+
+        source.append("}\n");
+        return source;
+    }
 }

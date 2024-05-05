@@ -36,6 +36,43 @@ using wire_enum_t = uint32_t;
 using wire_op_t = uint16_t;
 using wire_size_t = uint16_t;
 
+//class WireBuffer;
+//
+//template<typename T>
+//struct wire_t {
+//    static size_t size(const T t);
+//    static void   put(WireBuffer& wb, T t);
+//};
+//
+//template<typename T>
+//concept WireType = requires (T t, WireBuffer& wb) {
+//    { t.size() } -> std::same_as<size_t>;
+//    { t.put(wb) } -> std::same_as<void>;
+//};
+//
+//
+//struct new_id_t {
+//    uint32_t value;
+//};
+//
+//
+// template<WireType T>
+// void add(T t) {
+//      resize(wb_.size() + t.size());
+//      t.put(wb_);
+// }
+//
+// template<typename ...T>
+// void add(T ...t) {
+//   resize(wb_.size() + (t.size() + ...));
+//   (t.put(wb_)...);
+// }
+//
+
+//    void add_new_id(wire_new_id_t new_id) {
+//        resize(wb_.size() + (sizeof(decltype(new_id)) / 4));
+//        wb_[index++] = new_id;
+//    }
 
 class WireBuffer {
 public:
@@ -131,6 +168,11 @@ public:
     void add_new_id(wire_new_id_t new_id) {
         resize(wb_.size() + (sizeof(decltype(new_id)) / 4));
         wb_[index++] = new_id;
+    }
+
+    template<typename T>
+    void add(T t) {
+        
     }
 
     void print() {

@@ -7,6 +7,8 @@
 
 
 namespace cpp {
+    class Definition;
+
     class Parameter {
     public:
         Parameter(type_t type, std::string name = "", std::string default_init = "") :
@@ -35,6 +37,7 @@ namespace cpp {
 
         std::string to_string() const;
 
+        friend class Definition;
     private:
         std::string name;
         type_t return_type;

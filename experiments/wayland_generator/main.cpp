@@ -1,9 +1,11 @@
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
 #include <string>
 #include <iostream>
 #include <sstream>
 #include <format>
+
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+
 #include "wire_types.hpp"
 #include "protocol.hpp"
 #include "wlstream.hpp"
@@ -21,48 +23,11 @@
 namespace pt = boost::property_tree;
 
 static const std::string wayland_xml_path = "/usr/share/wayland/wayland.xml";
-/**
- *
- *<!ELEMENT protocol (copyright?, description?, interface+)>
- *  <!ATTLIST protocol name CDATA #REQUIRED>
- *<!ELEMENT copyright (#PCDATA)>
- *<!ELEMENT interface (description?,(request|event|enum)+)>
- *  <!ATTLIST interface name CDATA #REQUIRED>
- *  <!ATTLIST interface version CDATA #REQUIRED>
- *<!ELEMENT request (description?,arg*)>
- *  <!ATTLIST request name CDATA #REQUIRED>
- *  <!ATTLIST request type CDATA #IMPLIED>
- *  <!ATTLIST request since CDATA #IMPLIED>
- *<!ELEMENT event (description?,arg*)>
- *  <!ATTLIST event name CDATA #REQUIRED>
- *  <!ATTLIST event type CDATA #IMPLIED>
- *  <!ATTLIST event since CDATA #IMPLIED>
- *<!ELEMENT enum (description?,entry*)>
- *  <!ATTLIST enum name CDATA #REQUIRED>
- *  <!ATTLIST enum since CDATA #IMPLIED>
- *  <!ATTLIST enum bitfield CDATA #IMPLIED>
- *<!ELEMENT entry (description?)>
- *  <!ATTLIST entry name CDATA #REQUIRED>
- *  <!ATTLIST entry value CDATA #REQUIRED>
- *  <!ATTLIST entry summary CDATA #IMPLIED>
- *  <!ATTLIST entry since CDATA #IMPLIED>
- *<!ELEMENT arg (description?)>
- *  <!ATTLIST arg name CDATA #REQUIRED>
- *  <!ATTLIST arg type CDATA #REQUIRED>
- *  <!ATTLIST arg summary CDATA #IMPLIED>
- *  <!ATTLIST arg interface CDATA #IMPLIED>
- *  <!ATTLIST arg allow-null CDATA #IMPLIED>
- *  <!ATTLIST arg enum CDATA #IMPLIED>
- *<!ELEMENT description (#PCDATA)>
- *  <!ATTLIST description summary CDATA #REQUIRED>
- *
- *
- */
 
 namespace wg = wayland::generator;
 
 
-int main () {
+int main1 () {
 /**
  * 
  * class WLDisplay {
@@ -145,10 +110,6 @@ int main () {
     ns.add(cl);
     display_header.add(ns);
 
-#if 0
-    std::cout << "Header[" << display_header.get_name() <<  "]\n" << display_header.to_string() << "\nEnd File" << std::endl;
-#endif
-
     cpp::Source display_source("display");
     display_source.set_namespace(ns);
     cpp::MethodBody reg_meth_body;
@@ -157,17 +118,6 @@ int main () {
     reg_meth_body.add("s_.write(builder.data(), builder.size());");
     cpp::Definition get_reg_def(cl, get_reg_method, reg_meth_body);
     display_source.add(get_reg_def);
-
-#if 0
-    std::cout << "Source:[" << display_source.get_name() << "]\n" << display_source.to_string() << "\nEnd File" << std::endl;
-#endif
-
-//    void get_registry(wire_new_id_t registry_id) {
-//        WireObjectBuilder builder(id, get_registry_op);
-//        builder.add_new_id(registry_id);
-//        builder.print();
-//        s_.write(builder.data(), builder.size());
-//    }
 
     cpp::Document header(display_header.get_name(), 80);
     header << display_header;
@@ -185,7 +135,15 @@ int main () {
     return 0;
 }
 
-int main1() {
+auto interface_to_cpp(const wayland::generator::WLInterface& interface) {
+    cpp::Header header(interface.name);
+    cpp::Source source(interface.name);
+
+
+    return std::tuple(header, source);
+}
+
+int main() {
     std::vector<wg::WLInterface> interfaces;
     pt::ptree tree;
 

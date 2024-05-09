@@ -1,4 +1,4 @@
-#include "document.hpp"
+#include "cpp/document.hpp"
 
 #include <cassert>
 #include <fstream>

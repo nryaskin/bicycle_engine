@@ -1,4 +1,4 @@
-#include "class.hpp"
+#include "cpp/class.hpp"
 
 #include "sstream"
 

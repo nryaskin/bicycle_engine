@@ -18,12 +18,10 @@ namespace cpp {
         Namespace(const Namespace&) = default;
         Namespace& operator=(const Namespace&) = default;
 
-        std::string to_string() const;
-
         friend class Definition;
         friend class Source;
+        friend Document& operator<<(Document& doc, const Namespace& header);
     private:
-        std::string get_body() const;
         std::string id_ = "";
     };
 };

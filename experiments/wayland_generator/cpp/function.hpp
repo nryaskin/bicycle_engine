@@ -14,8 +14,7 @@ namespace cpp {
         Parameter(type_t type, std::string name = "", std::string default_init = "") :
             type(type), name(name), default_init(default_init) {}
 
-        // TODO: I think can replace all of this with format or something like that to use with vformat at least.
-        std::string to_string() const;
+        friend Document& operator<<(Document& doc, const Parameter& ns);
     private:
         type_t type;
         std::string name;
@@ -35,9 +34,8 @@ namespace cpp {
             parameters.push_back(parameter);
         }
 
-        std::string to_string() const;
-
         friend class Definition;
+        friend Document& operator<<(Document& doc, const Function& ns);
     private:
         std::string name;
         type_t return_type;

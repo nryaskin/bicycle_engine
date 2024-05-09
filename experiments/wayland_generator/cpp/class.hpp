@@ -46,18 +46,18 @@ namespace cpp {
             void add(Parameter p) {
                 parameters.push_back(p);
             }
-        
-            std::string to_string() const;
 
             friend class Definition;
+            friend Document& operator<<(Document&, const Ctr&);
         private:
             std::vector<Parameter> parameters;
         };
 
         Class(const std::string& name);
         void add_ctr(Ctr ctr);
-        std::string to_string() const;
+
         friend class Definition;
+        friend Document& operator<<(Document&, const Class&);
 
     private:
         ClassKey class_key = ClassKey::CLASS;

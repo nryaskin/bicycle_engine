@@ -6,10 +6,7 @@ set(WAYLAND_GEN_SRCS
     protocol.cpp
     cpp/file.cpp
     cpp/class.cpp
-    cpp/function.cpp
-    cpp/namespace.cpp
-    cpp/simple_decl.cpp
-    cpp/type.cpp)
+    cpp/document.cpp)
 
 add_executable(waylandcpp_generator)
 target_sources(waylandcpp_generator PRIVATE ${WAYLAND_GEN_SRCS})

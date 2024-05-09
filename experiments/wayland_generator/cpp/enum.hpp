@@ -13,7 +13,9 @@ namespace cpp {
         class Entity {
         public:
             Entity(const std::string& name, const std::string& value) : name(name), value(value) {}
+
             friend class Enum;
+            friend Document& operator<<(Document&, const Entity&);
         private:
             std::string name;
             std::string value;
@@ -25,16 +27,7 @@ namespace cpp {
             entities.push_back(e);
         }
 
-        std::string to_string() const {
-            std::stringstream ss;
-            ss << std::format("enum class {} : {} {{\n", name, base.to_string()); 
-            for (const auto& e: entities) {
-                ss << std::format("{} = {},\n", e.name, e.value);
-            }
-            ss << "};\n";
-            
-            return ss.str();
-        }
+        friend Document& operator<<(Document&, const Enum&);
 
     private:
         std::string name;

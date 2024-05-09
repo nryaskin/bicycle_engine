@@ -3,6 +3,7 @@
 #include <string>
 
 namespace cpp {
+    class Document;
     enum class access_modifier_t {
         PUBLIC,
         PROTECTED,
@@ -12,17 +13,8 @@ namespace cpp {
     class AccessModifier {
     public:
         AccessModifier(access_modifier_t mod) : mod(mod) {}
-        std::string to_string() const {
-            switch(mod) {
-            case access_modifier_t::PRIVATE:
-                return "private:";
-            case access_modifier_t::PUBLIC:
-                return "public:";
-            case access_modifier_t::PROTECTED:
-                return "protected:";
-            }
-            return "";
-        }
+
+        friend Document& operator<<(Document& doc, const AccessModifier& am);
     private:
         access_modifier_t mod;
     };

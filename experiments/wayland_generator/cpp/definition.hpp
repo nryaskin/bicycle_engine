@@ -10,6 +10,7 @@
 #include "namespace.hpp"
 
 namespace cpp {
+    class Document;
     // Warnign: I don't care about anything cpp related here other then what I need for waylad so I am going to create only definition of class methods here.
     // So body here is absolutely simple string lines.
     class MethodBody {
@@ -47,30 +48,8 @@ namespace cpp {
             method_(method),
             method_body_(method_body)  {}
 
-        std::string to_string() const {
-            std::stringstream ss;
-            bool comma = false;
+        friend Document& operator<<(Document& doc, const Definition& def);
 
-            // NOTE: Very dirty, just need it to work.
-            if (method_.has_value()) {
-                ss << std::format("{} {}::{}(", method_.value().return_type.to_string(), class_.class_head_name, method_.value().name);
-                for (const auto& parameter: method_.value().parameters) {
-                    ss << (comma? ",": "") << parameter.to_string();
-                    comma = true;
-                }
-            } else {
-                // Constructor
-                ss << std::format("{}::{}(", class_.class_head_name, class_.class_head_name);
-                for (const auto& parameter: ctr_->parameters) {
-                    ss << (comma? ",": "") << parameter.to_string();
-                    comma = true;
-                }
-
-            }
-
-            ss << std::format(") {{\n{}}}", method_body_.to_string());
-            return ss.str();
-        }
     private:
         Class                     class_;
         std::optional<Class::Ctr> ctr_;

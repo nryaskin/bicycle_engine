@@ -15,14 +15,14 @@ namespace cpp {
 
     class AngleInclusion : public SourceFileInclusion {
     public:
-        static constexpr char start = '<';
-        static constexpr char end = '>';
+        static constexpr std::string start = "<";
+        static constexpr std::string end = ">";
     };
 
     class QuoteInclusion : public SourceFileInclusion {
     public:
-        static constexpr char start = '"';
-        static constexpr char end = '"';
+        static constexpr std::string start = "\"";
+        static constexpr std::string end = "\"";
     };
 
     class Includes : public Container<AngleInclusion, QuoteInclusion> {

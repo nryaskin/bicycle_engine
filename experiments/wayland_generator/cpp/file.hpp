@@ -13,6 +13,8 @@
 #include "container.hpp"
 
 namespace cpp {
+    class Document;
+
     class File {
     public:
         File(const std::string& name);
@@ -22,10 +24,9 @@ namespace cpp {
             includes.add(t);
         }
 
-        std::string to_string() const;
-
         std::string get_name() const { return name; }
 
+        friend Document& operator<<(Document&, const File&);
     private:
         Includes includes;
         std::string name;
@@ -38,7 +39,7 @@ namespace cpp {
     public:
         Header(const std::string& name) : File(name + ".hpp") {}
 
-        std::string to_string() const;
+        friend Document& operator<<(Document&, const Header&);
     };
 
     class Source : public File {
@@ -46,7 +47,8 @@ namespace cpp {
         Source(const std::string& name) : File(name + ".cpp") {}
         void set_namespace(Namespace ns) { ns_ = ns; }
         void add(Definition def);
-        std::string to_string() const;
+
+        friend Document& operator<<(Document&, const Source&);
     private:
         Namespace ns_;
         std::vector<Definition> definitions;

@@ -14,6 +14,9 @@
 #include "cpp/namespace.hpp"
 #include "cpp/class.hpp"
 #include "cpp/enum.hpp"
+#include "cpp/document.hpp"
+#include "cpp/formatter.hpp"
+
 
 namespace pt = boost::property_tree;
 
@@ -142,7 +145,9 @@ int main () {
     ns.add(cl);
     display_header.add(ns);
 
+#if 0
     std::cout << "Header[" << display_header.get_name() <<  "]\n" << display_header.to_string() << "\nEnd File" << std::endl;
+#endif
 
     cpp::Source display_source("display");
     display_source.set_namespace(ns);
@@ -153,7 +158,10 @@ int main () {
     cpp::Definition get_reg_def(cl, get_reg_method, reg_meth_body);
     display_source.add(get_reg_def);
 
+#if 0
     std::cout << "Source:[" << display_source.get_name() << "]\n" << display_source.to_string() << "\nEnd File" << std::endl;
+#endif
+
 //    void get_registry(wire_new_id_t registry_id) {
 //        WireObjectBuilder builder(id, get_registry_op);
 //        builder.add_new_id(registry_id);
@@ -161,6 +169,14 @@ int main () {
 //        s_.write(builder.data(), builder.size());
 //    }
 
+    cpp::Document header(display_header.get_name(), 80);
+    header << display_header;
+
+    std::filesystem::path tmp = "/home/tutturu/projects/bicycle_engine/tmp";
+    if(!std::filesystem::exists(tmp)) {
+        throw std::runtime_error("Output dir doesn't exist!");
+    }
+    header.save(tmp);
 
     return 0;
 }

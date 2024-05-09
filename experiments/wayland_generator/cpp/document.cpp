@@ -55,7 +55,7 @@ namespace cpp {
             throw std::runtime_error(std::format("Path shall be directory: {}", path.string()));
         }
 
-        std::string full_path = path.string() + name;
+        std::string full_path = path / name;
         std::fstream f(full_path, f.out | f.trunc);
         for (const auto& line : lines) {
             f << line.get() << std::endl;

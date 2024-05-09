@@ -172,11 +172,15 @@ int main () {
     cpp::Document header(display_header.get_name(), 80);
     header << display_header;
 
+    cpp::Document source(display_source.get_name(), 80);
+    source << display_source;
+
     std::filesystem::path tmp = "/home/tutturu/projects/bicycle_engine/tmp";
     if(!std::filesystem::exists(tmp)) {
         throw std::runtime_error("Output dir doesn't exist!");
     }
     header.save(tmp);
+    source.save(tmp);
 
     return 0;
 }

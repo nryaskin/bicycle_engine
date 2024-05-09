@@ -58,7 +58,7 @@ namespace cpp {
 
         friend class Definition;
         friend Document& operator<<(Document&, const Class&);
-
+        friend Document& operator<<(Document& doc, const Definition& def);
     private:
         ClassKey class_key = ClassKey::CLASS;
         std::string class_head_name;

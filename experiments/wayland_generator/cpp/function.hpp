@@ -36,6 +36,7 @@ namespace cpp {
 
         friend class Definition;
         friend Document& operator<<(Document& doc, const Function& ns);
+        friend Document& operator<<(Document& doc, const Definition& def);
     private:
         std::string name;
         type_t return_type;

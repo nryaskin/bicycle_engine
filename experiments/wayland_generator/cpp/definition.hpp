@@ -19,15 +19,9 @@ namespace cpp {
             lines.push_back(line);
         }
 
-        std::string to_string() const {
-            std::stringstream ss;
 
-            for(const auto& line : lines) {
-                ss << line << "\n";
-            }
+        friend Document& operator<<(Document& doc, const MethodBody& def);
 
-            return ss.str();
-        }
     private:
         std::vector<std::string> lines;
     };

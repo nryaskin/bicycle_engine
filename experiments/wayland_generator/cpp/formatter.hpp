@@ -253,31 +253,46 @@ namespace cpp {
     }
 
     inline Document& operator<<(Document& doc, const Definition& def) {
-#if 0
-        std::stringstream ss;
         bool comma = false;
-
-        // NOTE: Very dirty, just need it to work.
         if (def.method_.has_value()) {
-            ss << std::format("{} {}::{}(", method_.value().return_type.to_string(), class_.class_head_name, method_.value().name);
-            for (const auto& parameter: method_.value().parameters) {
-                ss << (comma? ",": "") << parameter.to_string();
+
+            for (const auto& parameter : def.method_.value().parameters) {
+                const auto& method = def.method_.value();
+                doc << method.return_type;
+                doc.append_tokens({ " ", def.class_.class_head_name, "::", method.name, "(" });
+                if (comma) {
+                    doc.append_tokens({",", " "});
+                }
+                doc << parameter;
                 comma = true;
             }
+
         } else {
-            // Constructor
-            //
-            doc.append_token(cs.class_head_name);
-            ss << std::format("{}::{}(", class_.class_head_name, class_.class_head_name);
-            for (const auto& parameter: ctr_->parameters) {
-                ss << (comma? ",": "") << parameter.to_string();
+            doc.append_tokens({ def.class_.class_head_name, "::", def.class_.class_head_name, "(" });
+            for (const auto& parameter : def.method_.value().parameters) {
+                if (comma) {
+                    doc.append_tokens({",", " "});
+                }
+                doc << parameter;
                 comma = true;
             }
-
         }
+        doc.append_tokens({")", " ", "{"});
+        doc.finish_block();
+        doc.ident_incr();
+        doc << def.method_body_;
+        doc.ident_decr();
+        doc.append_token("}");
+        doc.finish_block();
 
-        ss << std::format(") {{\n{}}}", method_body_.to_string());
-#endif
+        return doc;
+    }
+
+    inline Document& operator<<(Document& doc, const MethodBody& mb) {
+        for(const auto& line : mb.lines) {
+            doc.append_token(line);
+            doc.finish_block();
+        }
         return doc;
     }
 }

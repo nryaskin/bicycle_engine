@@ -3,7 +3,8 @@ find_package(Boost REQUIRED CONFIG COMPONENTS system)
 set(WAYLAND_GEN_SRCS
     main.cpp
     wlstream.cpp
-    protocol.cpp)
+    protocol.cpp
+    cppbuilder.cpp)
 
 add_executable(waylandcpp_generator)
 target_sources(waylandcpp_generator PRIVATE ${WAYLAND_GEN_SRCS})

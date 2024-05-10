@@ -115,7 +115,7 @@ namespace cpp {
         bool comma = false;
 
         doc << func.return_type;
-        doc.append_tokens({ " ", func.name, "(" });
+        doc.append_tokens({ " ", func.name(), "(" });
 
         for (const auto& parameter: func.parameters) {
             if (comma) {
@@ -133,11 +133,11 @@ namespace cpp {
     inline Document& operator<<(Document& doc, const Parameter& param) {
         if (param.default_init.size() == 0) {
             doc << param.type;
-            doc.append_tokens({ " ", param.name});
+            doc.append_tokens({ " ", param.name()});
         }
         else {
             doc << param.type;
-            doc.append_tokens({ " ", param.name, " ", param.default_init });
+            doc.append_tokens({ " ", param.name(), " ", param.default_init });
         }
         return doc;
     }
@@ -256,10 +256,10 @@ namespace cpp {
         bool comma = false;
         if (def.method_.has_value()) {
 
+            const auto& method = def.method_.value();
+            doc << method.return_type;
+            doc.append_tokens({ " ", def.class_.class_head_name, "::", method.name(), "(" });
             for (const auto& parameter : def.method_.value().parameters) {
-                const auto& method = def.method_.value();
-                doc << method.return_type;
-                doc.append_tokens({ " ", def.class_.class_head_name, "::", method.name, "(" });
                 if (comma) {
                     doc.append_tokens({",", " "});
                 }

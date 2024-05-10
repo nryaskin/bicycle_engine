@@ -9,6 +9,7 @@
 #include "wire_types.hpp"
 #include "protocol.hpp"
 #include "wlstream.hpp"
+#include "cppbuilder.hpp"
 
 // CPP
 #include "cpp/file.hpp"
@@ -40,9 +41,8 @@ int main1 () {
  *         INVALID_METHOD = 1,
  *         NO_MEMORY = 2,
  *         IMPLEMENTATION = 3
- *     };
+ *     }; * 
  * 
- *     WLDisplay(WLSocket& s, std::string&& name = "");
  * 
  *     // Methods
  *     void get_registry(wire_new_id_t registry_id); 
@@ -135,14 +135,6 @@ int main1 () {
     return 0;
 }
 
-auto interface_to_cpp(const wayland::generator::WLInterface& interface) {
-    cpp::Header header(interface.name);
-    cpp::Source source(interface.name);
-
-
-    return std::tuple(header, source);
-}
-
 int main() {
     std::vector<wg::WLInterface> interfaces;
     pt::ptree tree;
@@ -162,6 +154,29 @@ int main() {
     for (auto& interface: interfaces) {
         std::cout << interface << std::endl;
     }
+
+    cpp::Includes includes;
+    cpp::QuoteInclusion wire_include;
+    wire_include.file = "wire_types.hpp";
+    includes.add(wire_include);
+
+    wayland::generator::Builder builder(includes);
+
+    auto [header, source] = builder.build(interfaces[0]);
+
+    cpp::Document hfile(header.get_name(), 80);
+    hfile << header;
+
+    cpp::Document cppfile(source.get_name(), 80);
+    cppfile << source;
+
+    std::filesystem::path tmp = "/home/tutturu/projects/bicycle_engine/tmp";
+    if(!std::filesystem::exists(tmp)) {
+        throw std::runtime_error("Output dir doesn't exist!");
+    }
+    hfile.save(tmp);
+    cppfile.save(tmp);
+
 
     return 0;
 }

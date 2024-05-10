@@ -21,7 +21,7 @@ namespace cpp {
 
         template<typename T>
         void add_include(T&& t) {
-            includes.add(t);
+            includes.add(std::forward<T>(t));
         }
 
         std::string get_name() const { return name; }

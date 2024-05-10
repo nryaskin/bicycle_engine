@@ -30,8 +30,11 @@ namespace wayland::generator {
     struct WLArgument {
         static constexpr std::string xml_name = "arg";
         std::string name;
-        wire_type type;
         std::string summary;
+        // NOTE: This three values describe one type.
+        // Normally we will have only type which is one of the basic types.
+        // In case it corresponds to enum the enum will be set, in case it is some object id then interface describing what object is it will be set.
+        wire_type type;
         std::optional<std::string> arg_enum;
         std::optional<std::string> arg_interface;
         static WLArgument create_from_xml(const boost::property_tree::ptree& description);

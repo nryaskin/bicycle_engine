@@ -15,12 +15,16 @@ namespace cpp {
 
     class AngleInclusion : public SourceFileInclusion {
     public:
+        AngleInclusion() = default;
+        AngleInclusion(const std::string& name) { file = name; }
         static constexpr std::string start = "<";
         static constexpr std::string end = ">";
     };
 
     class QuoteInclusion : public SourceFileInclusion {
     public:
+        QuoteInclusion() = default;
+        QuoteInclusion(const std::string& name) { file = name; }
         static constexpr std::string start = "\"";
         static constexpr std::string end = "\"";
     };

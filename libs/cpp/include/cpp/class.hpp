@@ -47,6 +47,8 @@ namespace cpp {
                 parameters.push_back(p);
             }
 
+            const auto& params() const { return parameters; }
+
             friend class Definition;
             friend Document& operator<<(Document&, const Ctr&);
         private:

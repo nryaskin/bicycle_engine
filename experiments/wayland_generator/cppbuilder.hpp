@@ -19,11 +19,13 @@ namespace wayland::generator {
         std::vector<cpp::Method> gen_requests(const std::vector<WLRequest>&);
         std::vector<cpp::Method> gen_events(const std::vector<WLEvent>&);
         cpp::MethodBody          gen_request_body(const cpp::Method&);
+        cpp::MethodBody          gen_ctr_body(const cpp::Class::Ctr&);
 
-        cpp::Definition          gen_definition(const cpp::Class& cs, const cpp::Method& m);
-        std::vector<cpp::Parameter> gen_parameters(const std::vector<WLArgument>& args);
+        cpp::Definition          gen_definition(const cpp::Class&, const cpp::Method&);
+        cpp::Definition          gen_definition(const cpp::Class&, const cpp::Class::Ctr&);
+        std::vector<cpp::Parameter> gen_parameters(const std::vector<WLArgument>&);
 
-        std::vector<cpp::SimpleDeclaration> gen_variables(const WLInterface& interface);
+        std::vector<cpp::SimpleDeclaration> gen_variables(const WLInterface&);
 
         cpp::Type wire_to_type(wire_type type);
         // TODO: I can track what I am including and where definitions are comming from but I don't want to do it now.

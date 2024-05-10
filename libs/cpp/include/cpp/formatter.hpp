@@ -70,9 +70,19 @@ namespace cpp {
     }
 
     inline Document& operator<<(Document& doc, const Source& source) {
+        const File& file = source;
+        doc << file;
+
+        doc.append_tokens({source.ns_.keyword, " ", source.ns_.id(), "{"});
+        doc.finish_block();
+        doc.ident_incr();
+
         for (const auto& def : source.definitions) {
             doc << def;
         }
+        doc.ident_decr();
+        doc.append_token("}");
+        doc.finish_block();
 
         return doc;
     }
@@ -174,6 +184,8 @@ namespace cpp {
         doc.finish_block();
         doc.ident_incr();
 
+        // WARNING: This here is ad hock, constructor shall be one of containers and not different entity inside class!!!
+        doc << AccessModifier(access_modifier_t::PUBLIC);
         for (const auto& ctr : cs.constructors) {
             doc.append_token(cs.class_head_name);
             doc << ctr;
@@ -269,7 +281,7 @@ namespace cpp {
 
         } else {
             doc.append_tokens({ def.class_.class_head_name, "::", def.class_.class_head_name, "(" });
-            for (const auto& parameter : def.method_.value().parameters) {
+            for (const auto& parameter : def.ctr_.value().params()) {
                 if (comma) {
                     doc.append_tokens({",", " "});
                 }

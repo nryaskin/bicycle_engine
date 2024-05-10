@@ -33,15 +33,15 @@ namespace wayland::generator {
                 break;
             case wire_type::OBJECT:
                 static cpp::Type wire_object_type("wire_object_t");
-                return wire_new_id_type;
+                return wire_object_type;
                 break;
             case wire_type::ARRAY:
                 static cpp::Type wire_array_type("wire_array_t");
-                return wire_new_id_type;
+                return wire_array_type;
                 break;
             case wire_type::STRING:
                 static cpp::Type wire_string_type("wire_string_t");
-                return wire_new_id_type;
+                return wire_string_type;
                 break;
         }
         return void_type;
@@ -60,6 +60,8 @@ namespace wayland::generator {
             }, include);
         }
 
+        source.add_include(cpp::QuoteInclusion(header.get_name()));
+
         cpp::Namespace ns("wayland::interface");
 
         cpp::Class cl(interface.name);
@@ -67,10 +69,12 @@ namespace wayland::generator {
         cl.add(cpp::AccessModifier(cpp::access_modifier_t::PUBLIC));
 
         cpp::Class::Ctr ctr;
-        ctr.add(cpp::Parameter(cpp::Ref(socket_type), "s_"));
+        ctr.add(cpp::Parameter(cpp::Ref(socket_type), "s"));
+        ctr.add(cpp::Parameter(wire_to_type(wire_type::OBJECT), "id", "= 0x0"));
         ctr.add(cpp::Parameter(cpp::RRef(cpp::Type("std::string")), "name", " = \"\""));
 
         cl.add_ctr(ctr);
+        source.add(gen_definition(cl, ctr));
 
         auto enums = gen_enums(interface.enums);
         for (auto& e : enums) {
@@ -86,7 +90,9 @@ namespace wayland::generator {
         auto events = gen_events(interface.events);
         for (auto& event : events) {
             cl.add(event);
+#if 0
             source.add(gen_definition(cl, event));
+#endif
         }
 
         cl.add(cpp::AccessModifier(cpp::access_modifier_t::PRIVATE));
@@ -95,12 +101,24 @@ namespace wayland::generator {
             cl.add(var);
         }
 
+        cl.add(cpp::SimpleDeclaration(cpp::Ref(socket_type), "s_"));
+        cl.add(cpp::SimpleDeclaration(wire_to_type(wire_type::OBJECT), "id_"));
+
         ns.add(cl);
         header.add(ns);
 
         source.set_namespace(ns);
 
         return { header, source};
+    }
+
+    cpp::MethodBody Builder::gen_ctr_body(const cpp::Class::Ctr& ctr) {
+        cpp::MethodBody mb;
+
+        mb.add("s_ = s;");
+        mb.add("id_ = id;");
+
+        return mb;
     }
 
     cpp::MethodBody Builder::gen_request_body(const cpp::Method& req) {
@@ -123,6 +141,9 @@ namespace wayland::generator {
          mb.add(write);
 
          return mb;
+    }
+    cpp::Definition Builder::gen_definition(const cpp::Class& cs, const cpp::Class::Ctr& ctr) {
+        return cpp::Definition(cs, ctr, gen_ctr_body(ctr));
     }
 
     cpp::Definition Builder::gen_definition(const cpp::Class& cs,

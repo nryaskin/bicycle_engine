@@ -156,26 +156,32 @@ int main() {
     }
 
     cpp::Includes includes;
-    cpp::QuoteInclusion wire_include;
-    wire_include.file = "wire_types.hpp";
+    cpp::QuoteInclusion wire_include("wire_types.hpp");
     includes.add(wire_include);
+    cpp::AngleInclusion string_include("string");
+    cpp::AngleInclusion vector_include("vector");
+    includes.add(string_include);
+    includes.add(vector_include);
 
     wayland::generator::Builder builder(includes);
-
-    auto [header, source] = builder.build(interfaces[0]);
-
-    cpp::Document hfile(header.get_name(), 80);
-    hfile << header;
-
-    cpp::Document cppfile(source.get_name(), 80);
-    cppfile << source;
 
     std::filesystem::path tmp = "/home/tutturu/projects/bicycle_engine/tmp";
     if(!std::filesystem::exists(tmp)) {
         throw std::runtime_error("Output dir doesn't exist!");
     }
-    hfile.save(tmp);
-    cppfile.save(tmp);
+
+    for (const auto& interface : interfaces) {
+        auto [header, source] = builder.build(interface);
+
+        cpp::Document hfile(header.get_name(), 80);
+        hfile << header;
+
+        cpp::Document cppfile(source.get_name(), 80);
+        cppfile << source;
+
+        hfile.save(tmp);
+        cppfile.save(tmp);
+    }
 
 
     return 0;

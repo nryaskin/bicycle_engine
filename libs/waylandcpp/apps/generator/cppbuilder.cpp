@@ -62,7 +62,8 @@ namespace wayland::generator {
             }, include);
         }
 
-        source.add_include(cpp::QuoteInclusion(header.get_name()));
+        source.add_include(cpp::QuoteInclusion(std::string("waylandcpp/") + header.get_name()));
+        source.add_include(cpp::QuoteInclusion(std::string("waylandcpp/wire/object_builder.hpp")));
 
         cpp::Namespace ns("waylandcpp::interface");
 
@@ -117,28 +118,29 @@ namespace wayland::generator {
     cpp::MethodBody Builder::gen_ctr_body(const cpp::Class::Ctr& ctr) {
         cpp::MethodBody mb;
 
-        mb.add("s_ = s;");
         mb.add("id_ = id;");
 
         return mb;
     }
 
     cpp::MethodBody Builder::gen_request_body(const cpp::Method& req) {
-         const std::string object_builder_def = std::format("WireObjectBuilder builder(id, {});", op_code_name(req.name()));
+         const std::string object_builder_def = std::format("waylandcpp::wire::WireObjectBuilder builder(id_, {});", op_code_name(req.name()));
          static const std::string write = "s_.write(builder.data(), builder.size());";
          cpp::MethodBody mb;
 
          mb.add(object_builder_def);
 
-         std::stringstream ss;
-         ss << "builder.add(";
-         bool comma = false;
-         for (const auto& p : req.get_params()) {
-             ss << (comma? ", " : "") << p.name();
-             comma = true;
+         if (req.get_params().size() > 0) {
+             std::stringstream ss;
+             ss << "builder.add(";
+             bool comma = false;
+             for (const auto& p : req.get_params()) {
+                 ss << (comma? ", " : "") << p.name();
+                 comma = true;
+             }
+             ss << ");";
+             mb.add(ss.str());
          }
-         ss << ");";
-         mb.add(ss.str());
 
          mb.add(write);
 

@@ -275,7 +275,7 @@ namespace cpp {
                 if (comma) {
                     doc.append_tokens({",", " "});
                 }
-                doc << parameter;
+                doc << parameter.discard_default();
                 comma = true;
             }
 
@@ -285,11 +285,15 @@ namespace cpp {
                 if (comma) {
                     doc.append_tokens({",", " "});
                 }
-                doc << parameter;
+                doc << parameter.discard_default();
                 comma = true;
             }
         }
-        doc.append_tokens({")", " ", "{"});
+        if (def.ctr_.has_value()) {
+            doc.append_tokens({")", " ", ":", " ", "s_(s)" ,"{" });
+        } else {
+            doc.append_tokens({")", " ", "{"});
+        }
         doc.finish_block();
         doc.ident_incr();
         doc << def.method_body_;

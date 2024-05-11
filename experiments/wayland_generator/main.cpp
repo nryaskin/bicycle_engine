@@ -156,12 +156,16 @@ int main() {
     }
 
     cpp::Includes includes;
-    cpp::QuoteInclusion wire_include("wire_types.hpp");
-    includes.add(wire_include);
     cpp::AngleInclusion string_include("string");
     cpp::AngleInclusion vector_include("vector");
     includes.add(string_include);
     includes.add(vector_include);
+
+    cpp::QuoteInclusion wire_include("waylandcpp/wire/types.hpp");
+    cpp::QuoteInclusion socket_include("waylandcpp/wire/socket.hpp");
+    cpp::QuoteInclusion object_builder_include("waylandcpp/wire/object_builder.hpp");
+    includes.add(wire_include);
+    includes.add(socket_include);
 
     wayland::generator::Builder builder(includes);
 

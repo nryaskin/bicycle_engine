@@ -16,6 +16,7 @@ namespace cpp {
 
         const std::string& name() const { return name_; }
 
+        Parameter discard_default() const { return Parameter(type, name_); }
         friend Document& operator<<(Document& doc, const Parameter& ns);
     private:
         type_t type;

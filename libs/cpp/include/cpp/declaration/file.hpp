@@ -4,12 +4,12 @@
 #include <vector>
 #include <variant>
 
-#include "incl.hpp"
+#include "includes.hpp"
 #include "namespace.hpp"
 #include "simple_decl.hpp"
 #include "function.hpp"
 #include "access_mod.hpp"
-#include "definition.hpp"
+#include "../definition/definition.hpp"
 #include "container.hpp"
 
 namespace cpp {

@@ -1,9 +1,9 @@
 #ifndef CPP_FORMATTER_H
 #define CPP_FORMATTER_H
 
-#include "document.hpp"
-#include "file.hpp"
-#include "type.hpp"
+#include "cpp/declaration/document.hpp"
+#include "cpp/declaration/file.hpp"
+#include "cpp/declaration/type.hpp"
 #include "function.hpp"
 #include <cassert>
 
@@ -24,8 +24,6 @@ namespace cpp {
         doc.append_token(std::format("{}&&", type.type.id()));
         return doc;
     }
-
-    //Why even consider only lines?
 
     inline Document& operator<<(Document& doc,const TypeVariant& type) {
         std::visit([&doc] (auto&& object) {

@@ -1,6 +1,7 @@
 #ifndef CPP_CLASS_H
 #define CPP_CLASS_H
 
+#if 0
 #include <string>
 #include <vector>
 #include <variant>
@@ -68,4 +69,5 @@ namespace cpp {
         std::vector<Ctr> constructors;
     };
 }
+#endif
 #endif /* CPP_CLASS_H */

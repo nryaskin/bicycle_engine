@@ -1,5 +1,5 @@
-#ifndef CPP_INCL_H
-#define CPP_INCL_H
+#ifndef CPP_INCLUDES_H
+#define CPP_INCLUDES_H
 #include <string>
 #include <variant>
 
@@ -37,4 +37,4 @@ namespace cpp {
     };
 }
 
-#endif /* CPP_INCL_H */
+#endif /* CPP_INCLUDES_H */

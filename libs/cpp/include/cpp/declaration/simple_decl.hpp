@@ -14,8 +14,6 @@ namespace cpp {
             initializer_ = initializer;
         }
 
-        std::string to_string() const;
-
         friend Document& operator<<(Document&, const SimpleDeclaration&);
     private:
         type_t      type_;

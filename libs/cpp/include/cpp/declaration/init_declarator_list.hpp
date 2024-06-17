@@ -9,6 +9,7 @@
 #include "declarator.hpp"
 #include "initializer.hpp"
 #include "cpp/symbols.hpp"
+#include "cpp/format.hpp"
 
 namespace cpp {
     // declarator [initializer](optional, except where required, such as when initializing references or const objects)
@@ -19,22 +20,20 @@ namespace cpp {
 
         const auto& declarator() const { return declarator_; }
         const auto& initializer() const { return initializer_; }
-        static constexpr auto separator = cpp::symbols::space;
+        static constexpr auto separator = language::space_t {};
     private:
         declarator_t  declarator_;
         std::optional<initializer_t> initializer_;
     };
 
     // Comma separated list of one or more init-declarator
-    class init_declarator_list_t {
+    class init_declarator_list_t : public std::vector<init_declarator_t> {
     public:
+        using format = language::format_t<init_declarator_t, language::zero_or_more<language::comma_t, init_declarator_t>>;
+        explicit init_declarator_list_t(init_declarator_t init_declarator) { push_back(init_declarator); }
         void add(init_declarator_t init_declarator) {
-            declarators.push_back(init_declarator);
+            push_back(init_declarator);
         }
-    static constexpr std::string separator = cpp::symbols::comma;
-    const auto& init_declarators() const { return declarators; }
-    private:
-        std::vector<init_declarator_t> declarators;
     };
 };
 

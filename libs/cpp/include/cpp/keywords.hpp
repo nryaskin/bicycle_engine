@@ -94,6 +94,43 @@ namespace language {
         static constexpr std::string keyword = "return";
     };
 
+    class public_keyword_t {
+    public:
+        constexpr public_keyword_t() {}
+        static constexpr std::string keyword = "public";
+    };
+
+    class protected_keyword_t {
+    public:
+        constexpr protected_keyword_t() {}
+        static constexpr std::string keyword = "protected";
+    };
+
+    class private_keyword_t {
+    public:
+        constexpr private_keyword_t() {}
+        static constexpr std::string keyword = "private";
+    };
+
+    class class_keyword_t {
+    public:
+        constexpr class_keyword_t() {}
+        static constexpr std::string keyword = "class";
+    };
+
+    class struct_keyword_t {
+    public:
+        constexpr struct_keyword_t() {}
+        static constexpr std::string keyword = "struct";
+    };
+
+    class union_keyword_t {
+    public:
+        constexpr union_keyword_t() {}
+        static constexpr std::string keyword = "union";
+    };
+
+
     using keyword_t = std::variant<static_keyword_t, extern_keyword_t,
                                    constexpr_keyword_t, volatile_keyword_t,
                                    const_keyword_t,
@@ -101,7 +138,9 @@ namespace language {
                                    case_keyword_t,
                                    for_keyword_t, while_keyword_t,
                                    default_keyword_t, goto_keyword_t,
-                                   break_keyword_t, continue_keyword_t, return_keyword_t>;
+                                   break_keyword_t, continue_keyword_t, return_keyword_t,
+                                   public_keyword_t, protected_keyword_t, private_keyword_t,
+                                   class_keyword_t, struct_keyword_t, union_keyword_t>;
 
     static constexpr keyword_t static_keyword = static_keyword_t {};
     static constexpr keyword_t extern_keyword = extern_keyword_t {};
@@ -118,4 +157,10 @@ namespace language {
     static constexpr keyword_t break_keyword = break_keyword_t {};
     static constexpr keyword_t continue_keyword = continue_keyword_t {};
     static constexpr keyword_t return_keyword = return_keyword_t {};
+    static constexpr keyword_t public_keyword = public_keyword_t {};
+    static constexpr keyword_t protected_keyword = protected_keyword_t {};
+    static constexpr keyword_t private_keyword = private_keyword_t {};
+    static constexpr keyword_t class_keyword = class_keyword_t {};
+    static constexpr keyword_t struct_keyword = struct_keyword_t {};
+    static constexpr keyword_t union_keyword = union_keyword_t {};
 };

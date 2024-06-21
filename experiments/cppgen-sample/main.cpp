@@ -5,6 +5,7 @@
 #include "cpp/declaration/simple_declarator.hpp"
 #include "cpp/declaration/statement.hpp"
 #include "cpp/declaration/function.hpp"
+#include "cpp/declaration/class.hpp"
 
 #include "cpp/transform/text.hpp"
 
@@ -36,6 +37,8 @@ int main() {
     function_body.push_back(std::make_shared<cpp::expression_statement_t>(cpp::expression_t("1 + 1")));
     cpp::function_t add_two(_int, add_two_decl, function_body);
 
+    cpp::clas animal("Animal");
+
     cpp::formatter::text txt;
     // txt << constexpr_string;
     // txt << c_value;
@@ -43,7 +46,8 @@ int main() {
     // txt << init_declarator_list;
     // txt << c_string_init_sd;
     // txt << label_statement;
-    txt << add_two;
+    //txt << add_two;
+    txt << animal;
     std::cout << txt;
 
     return 0;

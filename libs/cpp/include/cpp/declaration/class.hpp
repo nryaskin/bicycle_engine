@@ -6,6 +6,7 @@
 #include <optional>
 
 #include "cpp/declaration/declarator.hpp"
+#include "cpp/declaration/function.hpp"
 #include "cpp/symbols.hpp"
 
 // class-key class-head-name final(optional) base-clause(optional) { member-specification }
@@ -41,49 +42,136 @@ namespace cpp {
         PROTECTED
     };
 
-    enum class access_specifier_t {
-        PUBLIC,
-        PRIVATE,
-        PROTECTED
+    class access_specifier_t {
+    public:
+        enum class access_t {
+            PUBLIC,
+            PRIVATE,
+            PROTECTED
+        };
+        void sequential_all(auto&& action) const {
+            switch(access) {
+                case access_t::PUBLIC:
+                    action(language::public_keyword);
+                    break;
+                case access_t::PROTECTED:
+                    action(language::protected_keyword);
+                    break;
+                case access_t::PRIVATE:
+                    action(language::private_keyword);
+                    break;
+            }
+            action(language::collon);
+        }
+    private:
+        access_t access;
     };
 
     class base_clause_element_t {
     public:
-        base_clause_element_t(general_id_t id, inheritance_model_t inheritance_model = inheritance_model_t::PUBLIC)
+        base_clause_element_t(general_id_ptr id, inheritance_model_t inheritance_model = inheritance_model_t::PUBLIC)
             : id_(id),
               inheritance_model_(inheritance_model) {}
 
         const auto& inheritance_model() const { return inheritance_model_; }
         const auto& id() const { return id_; }
+        void sequential_all(auto&& action) const {
+            switch(inheritance_model_) {
+                case inheritance_model_t::PUBLIC:
+                    action(language::public_keyword);
+                    break;
+                case inheritance_model_t::PROTECTED:
+                    action(language::protected_keyword);
+                    break;
+                case inheritance_model_t::PRIVATE:
+                    action(language::private_keyword);
+                    break;
+            }
+            action(id());
+        }
     private:
         inheritance_model_t inheritance_model_;
-        general_id_t id_;
+        general_id_ptr id_;
     };
 
     class base_clause_t : public std::vector<base_clause_element_t> {
     public:
-        static constexpr auto separator = cpp::symbols::comma;
+        void sequential_all(auto&& action) const {
+            auto it = begin();
+            while(++it != end()) {
+                action(language::comma);
+                action(language::space);
+                action(*it);
+            }
+        }
     };
 
-    class member_object_t;
-    class member_function_t;
+    using member_object_t = cpp::simple_type_specifier_t;
+    using member_function_t = cpp::function_t;
 
-    using member_specification_var_t = std::variant<access_specifier_t, member_object_t, member_function_t>;
+    using member_specification_element_t = std::variant<access_specifier_t, member_object_t, member_function_t>;
 
-    class member_specification_t : public std::vector<member_specification_t> {
+    class member_specification_t : public std::vector<member_specification_element_t> {
     public:
-        static constexpr auto separator = cpp::symbols::newline;
+        void sequential_all(auto&& action) const {
+            auto it = begin();
+            while(++it != end()) {
+                action(*it);
+                action(language::newline);
+            }
+        }
     };
 
     class clas {
     public:
-        static constexpr std::string open   = cpp::symbols::open_curly_brace;
-        static constexpr std::string close  = cpp::symbols::close_curly_brace;
-        clas(const std::string& class_head_name, class_key_t class_key = class_key_t::CLASS)
+        clas(const std::string& class_head_name,
+             class_key_t class_key = class_key_t::CLASS)
             : class_head_name_(class_head_name),
               class_key_(class_key) {}
+
+        void set_base_clause(const base_clause_t& base_clause) {
+            base_clause_ = base_clause;
+        }
+
+        void set_member_specification(const member_specification_t& ms) {
+            member_specification_ = ms;
+        }
+
         const auto& class_head_name() const { return class_head_name_; }
         auto class_key() const { return class_key_; }
+
+        static void class_key_apply(class_key_t class_key, auto&& action) {
+            switch(class_key) {
+                case class_key_t::CLASS:
+                    action(language::class_keyword);
+                    break;
+                case class_key_t::STRUCT:
+                    action(language::struct_keyword);
+                    break;
+                case class_key_t::UNION:
+                    action(language::union_keyword);
+                    break;
+            }
+        }
+
+        void sequential_all(auto&& action) const {
+            class_key_apply(class_key(), action);
+            action(language::space);
+            action(class_head_name_);
+            if (base_clause_) {
+                action(language::space);
+                action(base_clause_.value());
+            }
+            action(language::space);
+            action(language::open_curly_brace);
+            action(language::newline);
+            if (member_specification_) {
+                action(member_specification_.value());
+            }
+            action(language::newline);
+            action(language::close_curly_brace);
+            action(language::semi_collon);
+        }
     private:
         std::string                           class_head_name_;
         class_key_t                           class_key_;
@@ -92,8 +180,14 @@ namespace cpp {
     };
 
     class forward_declaration {
-        static constexpr std::string trailer = cpp::symbols::semi_collon;
     public:
+        void sequential_all(auto&& action) const {
+            clas::class_key_apply(class_key, action);
+            action(language::space);
+            action(class_head_name);
+            action(language::semi_collon);
+        }
+    private:
         class_key_t   class_key;
         std::string   class_head_name;
     };

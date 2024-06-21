@@ -31,6 +31,10 @@ namespace cpp {
         explicit parameter_t(decl_specifier_seq_t decl_spec_sec, init_declarator_t init_decl)
             : decl_specifier_seq(decl_spec_sec),
               init_declarator(init_decl) {}
+        void sequential_all(auto&& action) const {
+            action(decl_specifier_seq);
+            action(init_declarator);
+        }
     private:
         decl_specifier_seq_t decl_specifier_seq;
         init_declarator_t init_declarator;
@@ -38,19 +42,37 @@ namespace cpp {
 
     class parameter_list_t : public std::vector<parameter_t> {
     public:
-        static constexpr auto separator = language::comma_t {};
+        void sequential_all(auto&& action) const {
+            if (size() == 0)
+                return;
+
+            auto it = begin();
+            action(*it);
+            while(++it != end()) {
+                action(language::comma);
+                action(language::space);
+                action(*it);
+            }
+        }
     };
 
     class function_declaration_t {
     public:
-        static constexpr auto open = language::open_curly_brace_t {};
-        static constexpr auto close = language::close_curly_brace_t {};
         explicit function_declaration_t(declarator_t declarator,
                                         parameter_list_t param_list,
-                                        cv_qualifier_t   cv_qualifier)
+                                        cv_qualifier_t   cv_qualifier = {})
             : noptr_declarator(declarator),
               parameter_list(param_list),
               cv_qualifier(cv_qualifier) {}
+
+        void sequential_all(auto&& action) const {
+            action(noptr_declarator);
+            action(language::open_brace);
+            action(parameter_list);
+            action(language::close_brace);
+            action(language::space);
+            action(cv_qualifier);
+        }
     private:
         declarator_t     noptr_declarator;
         parameter_list_t parameter_list; 
@@ -64,11 +86,17 @@ namespace cpp {
                             compound_statement_t   compound_statement)
             : decl_specifier_seq(decl_specifier_seq),
               function_delcaration(func_declaration),
-              compound_statement(compound_statement) {}
+              function_body(compound_statement) {}
 
+        void sequential_all(auto&& action) const {
+            action(decl_specifier_seq);
+            action(language::space);
+            action(function_delcaration);
+            action(function_body);
+        }
     private:
         decl_specifier_seq_t   decl_specifier_seq;
         function_declaration_t function_delcaration;
-        compound_statement_t   compound_statement;
+        compound_statement_t   function_body;
     };
 }

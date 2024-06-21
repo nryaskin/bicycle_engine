@@ -14,31 +14,67 @@
 // constexpr static char  | * const a | = nullptr;
 // decl-specifier-seq     |   init-declarator-list
 namespace cpp {
-    class specifier_t : public language::extensible_t {};
-
-    template<typename T>
-    class keyword_specifier_t : public specifier_t {
+    class keyword_specifier_t {
     public:
-        static constexpr auto keyword = T {};
+        language::keyword_t keyword;
+        constexpr void sequential_all(auto&& action) const {
+            action(keyword);
+        }
     };
 
-    class static_specifier_t : public keyword_specifier_t<language::static_keyword_t> {};
+    class static_specifier_t : public keyword_specifier_t {
+    public:
+        constexpr static_specifier_t() {
+            keyword = language::static_keyword;
+        }
+    };
 
-    class extern_specifier_t : public keyword_specifier_t<language::extern_keyword_t> {};
+    class extern_specifier_t : public keyword_specifier_t {
+    public:
+        constexpr extern_specifier_t() {
+            keyword = language::extern_keyword;
+        }
+    };
 
-    class constexpr_specifier_t : public keyword_specifier_t<language::constexpr_keyword_t> {};
+    class constexpr_specifier_t : public keyword_specifier_t {
+    public:
+        constexpr constexpr_specifier_t() {
+            keyword = language::constexpr_keyword;
+        }
+    };
 
-    class volatile_qualifier_t : public keyword_specifier_t<language::volatile_keyword_t> {};
+    class volatile_qualifier_t : public keyword_specifier_t {
+    public:
+        constexpr volatile_qualifier_t() {
+            keyword = language::volatile_keyword;
+        }
+    };
 
-    class const_qualifier_t : public keyword_specifier_t<language::const_keyword_t> {};
+    class const_qualifier_t : public keyword_specifier_t {
+    public:
+        constexpr const_qualifier_t() {
+            keyword = language::const_keyword;
+        }
+    };
 
     class cv_qualifier_t {
+    public:
+        cv_qualifier_t() {}
+        void sequential_all(auto&& action) const {
+            if (const_qualifier) {
+                action(const_qualifier.value());
+            }
+            if (volatile_qualifier) {
+                action(volatile_qualifier.value());
+            }
+        }
+    private:
         std::optional<const_qualifier_t> const_qualifier;
         std::optional<volatile_qualifier_t> volatile_qualifier;
     };
 
     // types such as char, bool, short, int, long, double, etc., previously declared enum, class name. And even more but I don't care.
-    class simple_type_specifier_t : public specifier_t {
+    class simple_type_specifier_t {
     public:
         simple_type_specifier_t(const std::string& id) : id_(id) {}
         const std::string& id() const { return id_; }
@@ -46,23 +82,39 @@ namespace cpp {
         std::string id_;
     };
 
+    static constexpr auto static_specifier = static_specifier_t {};
+    static constexpr auto extern_specifier = extern_specifier_t {};
+    static constexpr auto constexpr_specifier = constexpr_specifier_t {};
+    static constexpr auto volatile_qualifier = volatile_qualifier_t {};
+    static constexpr auto const_qualifier = const_qualifier_t {};
+
+    using specifier_t = std::variant<static_specifier_t, 
+                                     extern_specifier_t, 
+                                     constexpr_specifier_t,
+                                     volatile_qualifier_t,
+                                     const_qualifier_t,
+                                     simple_type_specifier_t>;
+
     // Sequence of white space separated specifiers
     // vector
     // (<specifier>, <symbol>,...)
-    class decl_specifier_seq_t : public language::extensible_list {
+    class decl_specifier_seq_t : public std::vector<specifier_t> {
     public:
-        using format = language::format_t<specifier_t, language::zero_or_more<language::space_t, specifier_t>>;
-
         explicit decl_specifier_seq_t(auto ...specifiers) {
             (push_back(specifiers),...);
         }
 
-        void remove(int i) {
-            erase(begin() + i);
+        void sequential_all(auto&& action) const {
+            auto it = begin();
+            action(*it);
+            while(++it != end()) {
+                action(separator);
+                action(*it);
+            }
         }
 
     public:
-        static constexpr auto separator = language::space_t {};
+        static constexpr auto separator = language::space;
     };
 }
 

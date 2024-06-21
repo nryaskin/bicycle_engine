@@ -6,6 +6,7 @@
 #include "cpp/declaration/simple_declarator.hpp"
 #include "cpp/symbols.hpp"
 #include "cpp/keywords.hpp"
+#include "cpp/format.hpp"
 
 namespace cpp {
 
@@ -15,6 +16,7 @@ namespace cpp {
     };
 
     using statement_ptr = std::shared_ptr<statement_t>;
+    using statement_vec = std::vector<statement_ptr>;
 
     // C++ includes following types of statements:
     // 1) labeled statements;  <- needed for case
@@ -31,17 +33,39 @@ namespace cpp {
     // default:          (3) <- default label in switch statement
     class label_statement_t : public statement_t {
     public:
-        enum class label_t {
+       enum class label_t {
             GOTO,
             CASE,
             DEFAULT
         };
+
         label_statement_t() : label_type_(label_t::DEFAULT) {}
         explicit label_statement_t(label_t label_type = label_t::DEFAULT, const std::string& label = "")
         : label_type_(label_type),
           label_(label) {}
         auto label_type() const { return label_type_; }
         const auto& label() const { return label_; }
+
+        void sequential_all(auto&& action) const {
+            switch (label_type()) {
+                case label_t::GOTO: {
+                    action(language::goto_keyword);
+                }
+                break;
+                case label_t::CASE: {
+                    action(language::case_keyword);
+                    action(language::space);
+                    action(label());
+                }
+                break;
+                case label_t::DEFAULT: {
+                    action(language::default_keyword);
+                }
+                break;
+            }
+            action(language::collon);
+        }
+
     private:
         label_t     label_type_;
         std::string label_;
@@ -55,15 +79,27 @@ namespace cpp {
          
         auto& expression() { return expression_; }
         const auto& expression() const { return expression_; }
+        void sequential_all(auto&& action) const {
+            action(expression());
+            action(language::semi_collon);
+        }
     private:
         expression_t expression_;
     };
 
     // { statement... }
-    class compound_statement_t : public statement_t, public std::vector<statement_ptr> {
+    class compound_statement_t : public statement_t, public statement_vec {
     public:
-        static constexpr auto open = language::open_curly_brace_t {};
-        static constexpr auto close = language::close_curly_brace_t {};
+        void sequential_all(auto&& action) const {
+            const statement_vec& vec = *this;
+            action(language::open_curly_brace);
+            action(language::newline);
+            for (auto& statement : vec) {
+                action(statement);
+                action(language::newline);
+            }
+            action(language::close_curly_brace);
+        }
     };
 
     using init_statement_t = std::variant<expression_statement_t, simple_declaration_t>;
@@ -76,7 +112,7 @@ namespace cpp {
     // init-statement - expression statement, simple declaration
     // condition - expression, declaration
     // statement - any statement(typically a compound).case: and default: are permitted
-    class if_statement_t : public statement_t {
+    class if_statement_t : public statement_t, statement_vec {
     public:
         explicit if_statement_t(condition_t condition, statement_ptr statement)
             : condition_(condition),
@@ -87,16 +123,16 @@ namespace cpp {
               condition_(condition),
               statement_(statement) {}
 
-        static constexpr auto if_key = language::if_keyword_t {};
-        static constexpr auto open = language::open_curly_brace_t {};
-        static constexpr auto close = language::close_curly_brace_t {};
-        // vector: 
-        // [ keyword,
-        //   symbol,
-        //   init_statement?,
-        //   condition,
-        //   symbol,
-        //   statement_t*]
+        void sequential_all(auto&& action) const {
+            action(language::if_keyword);
+            action(language::open_brace);
+            if (init_statement_) {
+                action(init_statement_.value());
+            }
+            action(condition_);
+            action(language::close_brace);
+            action(statement_);
+        }
     private:
         std::optional<init_statement_t>             init_statement_;
         condition_t                                 condition_;
@@ -113,29 +149,46 @@ namespace cpp {
             : init_statement_(init_statement),
               condition_(condition),
               statement_(statement) {}
-        static constexpr auto switch_key = language::switch_keyword_t {};
-        static constexpr auto open = language::open_curly_brace_t {};
-        static constexpr auto close = language::close_curly_brace_t {};
 
+        void sequential_all(auto&& action) const {
+            action(language::switch_keyword);
+            action(language::open_brace);
+            if (init_statement_) {
+                action(init_statement_.value());
+            }
+            action(condition_);
+            action(language::close_brace);
+            action(statement_);
+        }
     private:
         std::optional<init_statement_t> init_statement_;
         condition_t                     condition_;
-        std::shared_ptr<statement_t>    statement_;
+        statement_ptr                   statement_;
     };
 
+    using conditino_statement_t = std::variant<if_statement_t, switch_statement_t>;
 
     class while_statement_t : public statement_t {
     public:
         explicit while_statement_t(condition_t condition, statement_ptr statement)
             : condition_(condition),
               statement_(statement) {}
-        static constexpr auto keyword = language::while_keyword_t {};
         const auto& condition() const { return condition_; }
         const auto& statement() const { return statement_; }
+
+        void sequential_all(auto&& action) const {
+            action(language::while_keyword);
+            action(language::open_brace);
+            action(condition_);
+            action(language::close_brace);
+            action(statement_);
+        }
+
     private:
-        condition_t condition_;
-        std::shared_ptr<statement_t> statement_;
+        condition_t   condition_;
+        statement_ptr statement_;
     };
+
 
     class for_statement_t : public statement_t {
     public:
@@ -148,6 +201,20 @@ namespace cpp {
               condition_(condition),
               expression_(condition),
               statement_(statement) {}
+
+        void sequential_all(auto&& action) const {
+            action(language::for_keyword);
+            action(init_statement_);
+            action(language::semi_collon);
+            if (condition_) {
+                action(condition_.value());
+            }
+            action(language::semi_collon);
+            if (expression_) {
+                action(expression_.value());
+            }
+            action(statement_);
+        }
 
     private:
         init_statement_t            init_statement_;
@@ -175,12 +242,34 @@ namespace cpp {
         static auto return_statement(expression_t expression) {
             return jump_statement_t(jump_t::RETURN, expression);
         }
+
+        void sequential_all(auto&& action) const {
+            switch(jump_type_) {
+                case jump_t::BREAK: {
+                    action(language::break_keyword);
+                }
+                break;
+                case jump_t::CONTINUE: {
+                    action(language::continue_keyword);
+                }
+                break;
+                case jump_t::RETURN: {
+                    action(language::return_keyword);
+                    if (expression_) {
+                        action(expression_.value());
+                    }
+                }
+                break;
+            }
+            action(language::semi_collon);
+        }
+
     private:
         jump_statement_t(jump_t jump_type, expression_t expression)
             : jump_type_(jump_type),
               expression_(expression) {}
         jump_t jump_type_;
-        expression_t expression_;
+        std::optional<expression_t> expression_;
     };
 
     // declaration

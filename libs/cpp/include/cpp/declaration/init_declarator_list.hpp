@@ -20,7 +20,13 @@ namespace cpp {
 
         const auto& declarator() const { return declarator_; }
         const auto& initializer() const { return initializer_; }
-        static constexpr auto separator = language::space_t {};
+        void sequential_all(auto&& action) const {
+            action(declarator_);
+            if (initializer().has_value()) {
+                action(language::space);
+                action(initializer().value());
+            }
+        }
     private:
         declarator_t  declarator_;
         std::optional<initializer_t> initializer_;
@@ -33,6 +39,12 @@ namespace cpp {
         explicit init_declarator_list_t(init_declarator_t init_declarator) { push_back(init_declarator); }
         void add(init_declarator_t init_declarator) {
             push_back(init_declarator);
+        }
+
+        void sequential_all(auto&& action) const {
+            for(auto& id : *this) {
+                action(id);
+            }
         }
     };
 };

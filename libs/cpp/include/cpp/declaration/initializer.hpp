@@ -25,14 +25,27 @@ namespace cpp {
     public:
         using format = language::format_t<expression_t, language::zero_or_more<language::comma_t, expression_t>>;
         expression_list_t() {}
+        void sequential_all(auto&& action) {
+            auto it = begin();
+            action(*it);
+            while(++it != end()) {
+                action(language::comma);
+                action(*it);
+            }
+        }
         static constexpr auto separator = language::comma_t {};
     };
 
     class copy_initialization_t {
     public:
         copy_initialization_t(expression_t expression) : expr_(expression) {}
-        static constexpr auto assignment = language::assignment_t {};
-        const auto& expression() const { return expr_; }
+
+        void sequential_all(auto&& action) const {
+            action(language::assignment);
+            action(language::space);
+            action(expr_);
+        }
+
     private:
         expression_t expr_;
     };
@@ -65,6 +78,9 @@ namespace cpp {
         bool assign = false;
         static constexpr auto assignment = language::assignment_t {};
         const auto& init_list() const { return initializer_list; }
+        void sequential_all(auto&& action) const {
+
+        }
     private:
         braced_enclosed_initializer_list_t initializer_list;
     };
@@ -74,6 +90,7 @@ namespace cpp {
         static constexpr auto open  = language::open_brace_t {};
         static constexpr auto close = language::close_brace_t {};
         const auto& list() const { return l_; }
+        void sequential_all(auto&& action) const {}
     private:
         std::variant<expression_list_t, initializer_list_t> l_;
     };

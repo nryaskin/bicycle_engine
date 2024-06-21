@@ -10,7 +10,10 @@
 #include "cpp/format.hpp"
 
 namespace cpp {
-    class general_id_t : public language::extensible_t {};
+    class general_id_t {
+    public:
+        virtual ~general_id_t() {}
+    };
     using general_id_ptr = std::shared_ptr<general_id_t>;
 
     // just name that is declared
@@ -27,9 +30,14 @@ namespace cpp {
     // Declaration that uses qualified identifier
     class qualified_id_t : public general_id_t {
     public:
-        static constexpr auto collons = language::collon_t::symbol + language::collon_t::symbol;
         const auto& id() const { return id_; }
         const auto& prefix() const { return prefix_; }
+        void sequential_all(auto&& action) const {
+            action(prefix_);
+            action(language::collon);
+            action(language::collon);
+            action(id_);
+        }
     private:
         general_id_ptr prefix_;
         unqualified_id_t id_;
@@ -37,17 +45,32 @@ namespace cpp {
 
 
     // & declarator (Even if it is written on cppreference that it is any declarator it cannot be itself which means only two other options;
-    class lvalue_reference_declarator_t : public language::extensible_list {
+    class lvalue_reference_declarator_t {
     public:
-        using format = language::format_t<language::ampersand_t, language::space_t, general_id_t>;
-        lvalue_reference_declarator_t(general_id_ptr id) { push_back(id); }
+        lvalue_reference_declarator_t(general_id_ptr id) : id_(id) {}
+
+        void sequential_all(auto&& action) const {
+            action(language::ampersand);
+            action(language::space);
+            action(id_);
+        }
+    private:
+        general_id_ptr id_;
     };
 
     // && declarator 
-    class rvalue_reference_declarator_t : public language::extensible_list {
+    class rvalue_reference_declarator_t {
     public:
-        using format = language::format_t<language::ampersand_t, language::ampersand_t, language::space_t, general_id_t>;
-        rvalue_reference_declarator_t(general_id_ptr id) { push_back(id); }
+        rvalue_reference_declarator_t(general_id_ptr id) : id_(id) {}
+
+        void sequential_all(auto&& action) const {
+            action(language::ampersand);
+            action(language::ampersand);
+            action(language::space);
+            action(id_);
+        }
+    private:
+        general_id_ptr id_;
     };
 
     using declarator_t = std::variant<unqualified_id_t, qualified_id_t, lvalue_reference_declarator_t, rvalue_reference_declarator_t>;

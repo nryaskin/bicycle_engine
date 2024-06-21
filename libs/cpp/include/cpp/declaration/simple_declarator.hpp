@@ -15,6 +15,12 @@ namespace cpp {
 
         const auto& decl_spec_seq() const { return specifier_seq; }
         const auto& init_decl_list() const { return init_declarator_list; }
+        void sequential_all(auto&& action) const {
+            action(specifier_seq);
+            action(language::space);
+            action(init_declarator_list);
+            action(language::semi_collon);
+        }
 
     private:
         decl_specifier_seq_t   specifier_seq;

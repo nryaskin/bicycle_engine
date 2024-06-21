@@ -59,6 +59,29 @@ namespace language {
         }
     };
 
+    template<typename T>
+    struct check_and_apply_impl_t<std::vector<T>> {
+        static void apply(auto&& func, auto& iter, const auto end) {
+            auto& vec = *iter;
+            for (auto&v : vec) {
+                func(v);
+                ++iter;
+                // TODO: somehow add borders check
+            }
+        }
+    };
+
+    template<typename T>
+    struct check_and_apply_impl_t<std::optional<T>> {
+        static void apply(auto&& func, auto& iter, const auto end) {
+            if (iter->has_value()) {
+                func(iter.value());
+                ++iter;
+                // TODO: somehow add borders check
+            }
+        }
+    };
+
     // (<specifier>, <symbol>,...)
     // using decl_spec_seq = format<specifier_t, zero_or_more<language::space_t, specifier_t>>;
     template<typename ...Types>

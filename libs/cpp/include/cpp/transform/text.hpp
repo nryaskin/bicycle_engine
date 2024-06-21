@@ -18,21 +18,46 @@
 namespace cpp::formatter {
     class text {
     public:
+        enum class ident_t {
+            add,
+            sub
+        };
 
-    text& operator<<(const std::string& word) {
-        data.push_back(word);
-        return *this;
-    }
+        text& operator<<(const std::string& word) {
+            if (!dirty) {
+                data.push_back(std::string(identation, ' '));
+                dirty = true;
+            }
+            data.push_back(word);
+            return *this;
+        }
 
-    void to_file(std::filesystem::path& path) {
-        std::ofstream out_file(path, std::ios::out);
-        out_file << *this;
-    }
+        text& operator<<(const ident_t& id) {
+            switch(id) {
+                case ident_t::add: 
+                    identation += 4;
+                    break;
+                case ident_t::sub:
+                    identation -= 4;
+                    break;
+            }
+            return *this;
+        }
 
-    friend std::ostream& operator<<(std::ostream& out, const text& txt);
+        void newline() {
+            dirty = false;
+        }
 
+        void to_file(std::filesystem::path& path) {
+            std::ofstream out_file(path, std::ios::out);
+            out_file << *this;
+        }
+
+        friend std::ostream& operator<<(std::ostream& out, const text& txt);
     private:
         std::vector<std::string> data;
+        int                      identation = 0;
+        bool                     dirty = false;
     };
 
     std::ostream& operator<<(std::ostream& out, const cpp::formatter::text& txt) {
@@ -44,19 +69,25 @@ namespace cpp::formatter {
 
     cpp::formatter::text& operator<<(cpp::formatter::text& text, const general_id_ptr& general_id);
 
+    cpp::formatter::text& operator<<(cpp::formatter::text& text, const auto& var) {
+        auto print = [&](auto&& o) { return text << o; };
+        var.sequential_all(print);
+        return text;
+    }
+
     template<typename ...Types>
     cpp::formatter::text& operator<<(cpp::formatter::text& text, const std::variant<Types...>& general_var) {
         std::visit([&](auto&& var) { text << var; }, general_var);
         return text;
     }
 
-    // (<specifier>, <symbol>,...)
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, auto element) {
-        using Type = std::decay_t<decltype(element)>;
-        using format = Type::format;
-        format::check_and_apply([&](auto& el) { text << el; }, element.begin(), element.end());
-        return text;
-    }
+//   // (<specifier>, <symbol>,...)
+//   cpp::formatter::text& operator<<(cpp::formatter::text& text, auto element) {
+//       using Type = std::decay_t<decltype(element)>;
+//       using format = Type::format;
+//       format::check_and_apply([&](auto& el) { text << el; }, element.begin(), element.end());
+//       return text;
+//   }
 
     cpp::formatter::text& operator<<(cpp::formatter::text& text, const language::keyword_t& keyword) {
         std::visit([&](auto&& kw) {
@@ -69,50 +100,34 @@ namespace cpp::formatter {
     cpp::formatter::text& operator<<(cpp::formatter::text& text, const language::symbol_t& symbol) {
         std::visit([&](auto&& symbol) {
             using Type = std::decay_t<decltype(symbol)>;
+            if constexpr (std::same_as<Type, language::open_curly_brace_t>) {
+                text << cpp::formatter::text::ident_t::add;
+            }
+            if constexpr (std::same_as<Type, language::close_curly_brace_t>) {
+                text << cpp::formatter::text::ident_t::sub;
+            }
             text << Type::symbol;
+
+            if constexpr (std::same_as<Type, language::newline_t>) {
+                text.newline();
+            }
+
         }, symbol);
         return text;
     }
 
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const std::shared_ptr<cpp::simple_type_specifier_t>& st) {
-        text << st->id();
+    cpp::formatter::text& operator<<(cpp::formatter::text& text, const expression_t& expr) {
+        text << expr.expression();
         return text;
     }
 
-    template<typename Derrived>
-    void do_if_derrived(const std::shared_ptr<cpp::specifier_t>& el, auto&& func) {
-        if (auto&& derrived_ptr = std::dynamic_pointer_cast<Derrived>(el); derrived_ptr) {
-            language::keyword_t keyword = derrived_ptr->keyword;
-            func(keyword);
-        }
-    }
-
-    template<typename ...Derrived>
-    void do_for_all_derrived(const std::shared_ptr<cpp::specifier_t>& el, auto&& func) {
-        (do_if_derrived<Derrived>(el, func),...);
-    }
-
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const std::shared_ptr<cpp::specifier_t>& el) {
-        if (auto&& st_ptr = std::dynamic_pointer_cast<simple_type_specifier_t>(el); st_ptr) {
-            text << st_ptr;
-        }
-        auto print = [&](auto&& keyword) { text << keyword; };
-        do_for_all_derrived<cpp::static_specifier_t,
-                            cpp::extern_specifier_t,
-                            cpp::constexpr_specifier_t,
-                            cpp::volatile_qualifier_t,
-                            cpp::const_qualifier_t>(el, print);
-
+    cpp::formatter::text& operator<<(cpp::formatter::text& text, const cpp::simple_type_specifier_t& st) {
+        text << st.id();
         return text;
     }
 
     cpp::formatter::text& operator<<(cpp::formatter::text& text, const unqualified_id_t& unqualified_id) {
         text << unqualified_id.id();
-        return text;
-    }
-
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const qualified_id_t& qualified_id) {
-        text << qualified_id.prefix() << qualified_id.collons << qualified_id.id();
         return text;
     }
 
@@ -125,40 +140,26 @@ namespace cpp::formatter {
         return text;
     }
 
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const direct_initialization_t& copy_init) {
-        throw std::runtime_error("Not implemented yet for direct_initialization_t!");
-        return text;
-    }
-
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const list_initialization_t& copy_init) {
-        throw std::runtime_error("Not implemented yet for list_initialization_t!");
-        return text;
-    }
-
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const expression_t& expr) {
-        text << expr.expression();
-        return text;
-    }
-
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const copy_initialization_t& copy_init) {
-        // TODO: Monkey code to refactor
-        text << language::symbol_t(copy_init.assignment) << language::symbol_t(language::space_t {}) << copy_init.expression();
-        return text;
-    }
-
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const init_declarator_t& init_declarator) {
-        text << init_declarator.declarator();
-        if (auto initializer = init_declarator.initializer(); initializer.has_value()) {
-            return text << language::symbol_t(language::space_t {}) << initializer.value();
+    template<typename Derrived>
+    void do_if_derrived(const auto& el, auto&& func) {
+        if (auto&& derrived_ptr = std::dynamic_pointer_cast<Derrived>(el); derrived_ptr) {
+            func(*derrived_ptr);
         }
-        return text;
     }
 
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const simple_declaration_t& simple_declaration) {
-        text << simple_declaration.decl_spec_seq()
-             << language::symbol_t(simple_declaration.separator)
-             << simple_declaration.init_decl_list()
-             << language::symbol_t(simple_declaration.trailer);
+    template<typename ...Derrived>
+    void do_for_all_derrived(const auto& el, auto&& func) {
+        (do_if_derrived<Derrived>(el, func),...);
+    }
+
+    cpp::formatter::text& operator<<(cpp::formatter::text& text, const cpp::statement_ptr& stmt) {
+        auto print = [&](auto&& keyword) { text << keyword; };
+        do_for_all_derrived<cpp::label_statement_t,
+                            cpp::expression_statement_t,
+                            cpp::compound_statement_t,
+                            cpp::conditino_statement_t,
+                            cpp::iteration_statement_t>(stmt, print);
+
         return text;
     }
 }

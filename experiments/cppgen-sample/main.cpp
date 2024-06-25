@@ -16,7 +16,7 @@ int main() {
     cpp::decl_specifier_seq_t constexpr_string(cpp::static_specifier, cpp::constexpr_specifier, cpp::simple_type_specifier_t("char"));
 
     // && car
-    cpp::declarator_t c_value = cpp::rvalue_reference_declarator_t(cpp::unqualified_id_t::make("car"));
+    cpp::declarator_t c_value = cpp::rval_t(cpp::unqid_t("car"));
 
     // = "some"
     cpp::initializer_t copy_init = cpp::copy_initialization_t(cpp::expression_t("\"some\""));

@@ -15,11 +15,21 @@ namespace cpp {
     // declarator [initializer](optional, except where required, such as when initializing references or const objects)
     class init_declarator_t {
     public:
-        init_declarator_t(declarator_t declarator) : declarator_(declarator) {}
+        init_declarator_t(auto declarator) : declarator_(declarator) {}
         init_declarator_t(declarator_t declarator, initializer_t initializer) : declarator_(declarator), initializer_(initializer) {}
+        init_declarator_t(const init_declarator_t& init_decl) {
+            *this = init_decl;
+        }
+
+        init_declarator_t& operator=(const init_declarator_t& init_decl) {
+            declarator_ = init_decl.declarator_;
+            initializer_ = init_decl.initializer_;
+            return *this;
+        }
 
         const auto& declarator() const { return declarator_; }
         const auto& initializer() const { return initializer_; }
+
         void sequential_all(auto&& action) const {
             action(declarator_);
             if (initializer().has_value()) {

@@ -100,7 +100,7 @@ namespace cpp {
     // (<specifier>, <symbol>,...)
     class decl_specifier_seq_t : public std::vector<specifier_t> {
     public:
-        explicit decl_specifier_seq_t(auto ...specifiers) {
+        decl_specifier_seq_t(auto ...specifiers) {
             (push_back(specifiers),...);
         }
 

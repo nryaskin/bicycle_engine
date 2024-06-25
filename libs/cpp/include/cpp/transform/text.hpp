@@ -60,7 +60,7 @@ namespace cpp::formatter {
         bool                     dirty = false;
     };
 
-    std::ostream& operator<<(std::ostream& out, const cpp::formatter::text& txt) {
+    inline std::ostream& operator<<(std::ostream& out, const cpp::formatter::text& txt) {
         for (auto& word: txt.data) {
             out << word;
         }
@@ -69,14 +69,14 @@ namespace cpp::formatter {
 
     cpp::formatter::text& operator<<(cpp::formatter::text& text, const general_id_ptr& general_id);
 
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const auto& var) {
+    inline cpp::formatter::text& operator<<(cpp::formatter::text& text, const auto& var) {
         auto print = [&](auto&& o) { return text << o; };
         var.sequential_all(print);
         return text;
     }
 
     template<typename ...Types>
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const std::variant<Types...>& general_var) {
+    inline cpp::formatter::text& operator<<(cpp::formatter::text& text, const std::variant<Types...>& general_var) {
         std::visit([&](auto&& var) { text << var; }, general_var);
         return text;
     }
@@ -89,7 +89,7 @@ namespace cpp::formatter {
 //       return text;
 //   }
 
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const language::keyword_t& keyword) {
+    inline cpp::formatter::text& operator<<(cpp::formatter::text& text, const language::keyword_t& keyword) {
         std::visit([&](auto&& kw) {
             using Type = std::decay_t<decltype(kw)>;
             text << Type::keyword;
@@ -97,7 +97,7 @@ namespace cpp::formatter {
         return text;
     }
 
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const language::symbol_t& symbol) {
+    inline cpp::formatter::text& operator<<(cpp::formatter::text& text, const language::symbol_t& symbol) {
         std::visit([&](auto&& symbol) {
             using Type = std::decay_t<decltype(symbol)>;
             if constexpr (std::same_as<Type, language::open_curly_brace_t>) {
@@ -116,22 +116,22 @@ namespace cpp::formatter {
         return text;
     }
 
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const expression_t& expr) {
+    inline cpp::formatter::text& operator<<(cpp::formatter::text& text, const expression_t& expr) {
         text << expr.expression();
         return text;
     }
 
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const cpp::simple_type_specifier_t& st) {
+    inline cpp::formatter::text& operator<<(cpp::formatter::text& text, const cpp::simple_type_specifier_t& st) {
         text << st.id();
         return text;
     }
 
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const unqualified_id_t& unqualified_id) {
+    inline cpp::formatter::text& operator<<(cpp::formatter::text& text, const unqualified_id_t& unqualified_id) {
         text << unqualified_id.id();
         return text;
     }
 
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const general_id_ptr& general_id) {
+    inline cpp::formatter::text& operator<<(cpp::formatter::text& text, const general_id_ptr& general_id) {
         if (auto qual_ptr = std::dynamic_pointer_cast<qualified_id_t>(general_id); qual_ptr) {
             text << *qual_ptr;
         } else if (auto unqual_id = std::dynamic_pointer_cast<unqualified_id_t>(general_id); unqual_id) {
@@ -141,18 +141,18 @@ namespace cpp::formatter {
     }
 
     template<typename Derrived>
-    void do_if_derrived(const auto& el, auto&& func) {
+    inline void do_if_derrived(const auto& el, auto&& func) {
         if (auto&& derrived_ptr = std::dynamic_pointer_cast<Derrived>(el); derrived_ptr) {
             func(*derrived_ptr);
         }
     }
 
     template<typename ...Derrived>
-    void do_for_all_derrived(const auto& el, auto&& func) {
+    inline void do_for_all_derrived(const auto& el, auto&& func) {
         (do_if_derrived<Derrived>(el, func),...);
     }
 
-    cpp::formatter::text& operator<<(cpp::formatter::text& text, const cpp::statement_ptr& stmt) {
+    inline cpp::formatter::text& operator<<(cpp::formatter::text& text, const cpp::statement_ptr& stmt) {
         auto print = [&](auto&& keyword) { text << keyword; };
         do_for_all_derrived<cpp::label_statement_t,
                             cpp::expression_statement_t,

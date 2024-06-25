@@ -25,7 +25,7 @@ namespace cpp {
     public:
         using format = language::format_t<expression_t, language::zero_or_more<language::comma_t, expression_t>>;
         expression_list_t() {}
-        void sequential_all(auto&& action) {
+        void sequential_all(auto&& action) const {
             auto it = begin();
             action(*it);
             while(++it != end()) {
@@ -39,6 +39,7 @@ namespace cpp {
     class copy_initialization_t {
     public:
         copy_initialization_t(expression_t expression) : expr_(expression) {}
+        copy_initialization_t(const std::string& expression) : expr_(expression) {}
 
         void sequential_all(auto&& action) const {
             action(language::assignment);

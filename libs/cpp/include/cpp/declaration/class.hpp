@@ -49,6 +49,9 @@ namespace cpp {
             PRIVATE,
             PROTECTED
         };
+
+        constexpr access_specifier_t(access_t access) : access(access) {}
+
         void sequential_all(auto&& action) const {
             switch(access) {
                 case access_t::PUBLIC:
@@ -66,6 +69,9 @@ namespace cpp {
     private:
         access_t access;
     };
+    static constexpr auto public_access    = access_specifier_t(access_specifier_t::access_t::PUBLIC);
+    static constexpr auto protected_access = access_specifier_t(access_specifier_t::access_t::PROTECTED);
+    static constexpr auto private_access   = access_specifier_t(access_specifier_t::access_t::PRIVATE);
 
     class base_clause_element_t {
     public:
@@ -106,7 +112,7 @@ namespace cpp {
         }
     };
 
-    using member_object_t = cpp::simple_type_specifier_t;
+    using member_object_t = cpp::simple_declaration_t;
     using member_function_t = cpp::function_t;
 
     using member_specification_element_t = std::variant<access_specifier_t, member_object_t, member_function_t>;
@@ -154,6 +160,13 @@ namespace cpp {
             }
         }
 
+        void append(const member_specification_element_t& ms) {
+            if (!member_specification_) {
+                member_specification_ = cpp::member_specification_t {};
+            }
+            member_specification_.value().push_back(ms);
+        }
+
         void sequential_all(auto&& action) const {
             class_key_apply(class_key(), action);
             action(language::space);
@@ -167,8 +180,8 @@ namespace cpp {
             action(language::newline);
             if (member_specification_) {
                 action(member_specification_.value());
+                action(language::newline);
             }
-            action(language::newline);
             action(language::close_curly_brace);
             action(language::semi_collon);
         }

@@ -165,8 +165,8 @@ namespace wayland::generator {
         return params;
     }
 
-    std::vector<cpp::Method> Builder::gen_requests(const std::vector<WLRequest>& requests) {
-        std::vector<cpp::Method> methods;
+    std::vector<cpp::function_t> Builder::gen_requests(const std::vector<WLRequest>& requests) {
+        std::vector<cpp::function_t> methods;
 
         for (const auto& req : requests) {
             cpp::Method m(req.name, void_type);

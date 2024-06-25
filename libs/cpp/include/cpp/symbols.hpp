@@ -71,11 +71,31 @@ namespace language {
         static constexpr std::string symbol = "\n";
     };
 
+    class double_quote_t {
+    public:
+        constexpr double_quote_t() {}
+        static constexpr std::string symbol = "\"";
+    };
+
+    class open_angle_t {
+    public:
+        constexpr open_angle_t() {}
+        static constexpr std::string symbol = "<";
+    };
+
+    class close_angle_t {
+    public:
+        constexpr close_angle_t() {}
+        static constexpr std::string symbol = ">";
+    };
+
     using symbol_t = std::variant<space_t, collon_t, semi_collon_t,
                                   ampersand_t,
                                   open_curly_brace_t, close_curly_brace_t,
                                   open_brace_t, close_brace_t,
-                                  assignment_t, comma_t, newline_t>;
+                                  assignment_t, comma_t, newline_t,
+                                  double_quote_t,
+                                  open_angle_t, close_angle_t>;
     static constexpr symbol_t space = space_t {};
     static constexpr symbol_t collon = collon_t {};
     static constexpr symbol_t semi_collon = semi_collon_t {};
@@ -87,4 +107,7 @@ namespace language {
     static constexpr symbol_t assignment = assignment_t {};
     static constexpr symbol_t comma = comma_t {};
     static constexpr symbol_t newline = newline_t {};
+    static constexpr symbol_t double_quote = double_quote_t {};
+    static constexpr symbol_t open_angle = open_angle_t {};
+    static constexpr symbol_t close_angle = close_angle_t {};
 }

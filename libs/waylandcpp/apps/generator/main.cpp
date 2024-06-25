@@ -12,13 +12,8 @@
 #include "cppbuilder.hpp"
 
 // CPP
-#include "cpp/file.hpp"
-#include "cpp/type.hpp"
-#include "cpp/namespace.hpp"
-#include "cpp/class.hpp"
-#include "cpp/enum.hpp"
-#include "cpp/document.hpp"
-#include "cpp/formatter.hpp"
+#include "cpp/declaration/class.hpp"
+#include "cpp/transform/text.hpp"
 
 namespace fs = std::filesystem;
 namespace pt = boost::property_tree;
@@ -111,17 +106,13 @@ int main(int argc, char *argv[]) {
         }
         f << ")\n";
     } else {
-        cpp::Includes includes;
-        cpp::AngleInclusion string_include("string");
-        cpp::AngleInclusion vector_include("vector");
-        includes.add(string_include);
-        includes.add(vector_include);
+        std::vector<cpp::include_t> includes;
+        includes.push_back(cpp::AngleInclusion("string"));
+        includes.push_back(cpp::AngleInclusion("vector"));
 
-        cpp::QuoteInclusion wire_include("waylandcpp/wire/types.hpp");
-        cpp::QuoteInclusion socket_include("waylandcpp/wire/socket.hpp");
-        cpp::QuoteInclusion object_builder_include("waylandcpp/wire/object_builder.hpp");
-        includes.add(wire_include);
-        includes.add(socket_include);
+        includes.push_back(cpp::QuoteInclusion("waylandcpp/wire/types.hpp"));
+        includes.push_back(cpp::QuoteInclusion("waylandcpp/wire/socket.hpp"));
+        includes.push_back(cpp::QuoteInclusion("waylandcpp/wire/object_builder.hpp"));
 
         wayland::generator::Builder builder(includes);
 
@@ -137,16 +128,12 @@ int main(int argc, char *argv[]) {
         std::filesystem::create_directory(source_dir);
 
         for (const auto& interface : interfaces) {
-            auto [header, source] = builder.build(interface);
+            auto text = builder.build(interface);
 
-            cpp::Document hfile(header.get_name(), 80);
-            hfile << header;
-
-            cpp::Document cppfile(source.get_name(), 80);
-            cppfile << source;
-
-            hfile.save(header_dir);
-            cppfile.save(source_dir);
+            auto header_file = header_dir / interface.name;
+            std::cout << "HEADER: " << header_file << std::endl;
+            std::cout << text << std::endl;
+            // text.to_file(header_file);
         }
 
     }

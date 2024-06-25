@@ -3,7 +3,7 @@
 #include <string>
 #include <variant>
 
-#include "container.hpp"
+#include "cpp/symbols.hpp"
 
 namespace cpp {
     // https://en.cppreference.com/w/cpp/preprocessor/include
@@ -17,24 +17,28 @@ namespace cpp {
     public:
         AngleInclusion() = default;
         AngleInclusion(const std::string& name) { file = name; }
-        static constexpr std::string start = "<";
-        static constexpr std::string end = ">";
+
+        void sequential_all(auto&& action) const {
+            action(directive);
+            action(language::open_angle);
+            action(file);
+            action(language::close_angle);
+        }
     };
 
     class QuoteInclusion : public SourceFileInclusion {
     public:
         QuoteInclusion() = default;
         QuoteInclusion(const std::string& name) { file = name; }
-        static constexpr std::string start = "\"";
-        static constexpr std::string end = "\"";
-    };
-
-    class Includes : public Container<AngleInclusion, QuoteInclusion> {
-    public:
-        auto items() const {
-            return container;
+        void sequential_all(auto&& action) const {
+            action(directive);
+            action(language::double_quote);
+            action(file);
+            action(language::double_quote);
         }
     };
+
+    using include_t = std::variant<AngleInclusion, QuoteInclusion>;
 }
 
 #endif /* CPP_INCLUDES_H */

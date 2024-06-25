@@ -1,20 +1,20 @@
-#ifndef WAYLAND_GENERATOR_CPP_BUILDER_H
-#define WAYLAND_GENERATOR_CPP_BUILDER_H
+#pragma once
 
 #include "protocol.hpp"
-#include "cpp/incl.hpp"
-#include "cpp/file.hpp"
-#include "cpp/type.hpp"
+#include "cpp/declaration/includes.hpp"
+#include "cpp/transform/text.hpp"
 
 namespace wayland::generator {
     class Builder {
     public:
         // As variable mapper of wayland types to wire_type.h types I think.
-        Builder(cpp::Includes common_includes);
+        Builder(std::vector<cpp::include_t> common_includes) : common_includes(common_includes) {}
 
-        std::tuple<cpp::Header, cpp::Source> build(const wayland::generator::WLInterface&);
+        cpp::formatter::text build(const wayland::generator::WLInterface&);
 
     private:
+        std::vector<cpp::include_t> common_includes;
+#if 0
         std::vector<cpp::Enum>   gen_enums(const std::vector<WLEnum>&);
         std::vector<cpp::Method> gen_requests(const std::vector<WLRequest>&);
         std::vector<cpp::Method> gen_events(const std::vector<WLEvent>&);
@@ -34,7 +34,6 @@ namespace wayland::generator {
         std::vector<cpp::type_t> common_types;
         cpp::Type                socket_type = cpp::Type("waylandcpp::wire::WLSocket");
         cpp::Type                void_type   = cpp::Type("void");
+#endif
     };
 }
-
-#endif /* WAYLAND_GENERATOR_CPP_BUILDER_H */

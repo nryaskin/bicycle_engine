@@ -57,6 +57,13 @@ namespace cpp {
         }
     };
 
+    class virtual_specifier_t : public keyword_specifier_t {
+    public:
+        constexpr virtual_specifier_t() {
+            keyword = language::virtual_keyword;
+        }
+    };
+
     class cv_qualifier_t {
     public:
         cv_qualifier_t() {}
@@ -87,12 +94,14 @@ namespace cpp {
     static constexpr auto constexpr_specifier = constexpr_specifier_t {};
     static constexpr auto volatile_qualifier = volatile_qualifier_t {};
     static constexpr auto const_qualifier = const_qualifier_t {};
+    static constexpr auto virtual_qualifier = virtual_specifier_t {};
 
     using specifier_t = std::variant<static_specifier_t, 
                                      extern_specifier_t, 
                                      constexpr_specifier_t,
                                      volatile_qualifier_t,
                                      const_qualifier_t,
+                                     virtual_specifier_t,
                                      simple_type_specifier_t>;
 
     // Sequence of white space separated specifiers

@@ -115,7 +115,7 @@ namespace cpp {
     using member_object_t = cpp::simple_declaration_t;
     using member_function_t = cpp::function_t;
 
-    using member_specification_element_t = std::variant<access_specifier_t, member_object_t, member_function_t>;
+    using member_specification_element_t = std::variant<access_specifier_t, member_object_t, member_function_t, language::comment_t>;
 
     class member_specification_t : public std::vector<member_specification_element_t> {
     public:

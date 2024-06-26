@@ -6,6 +6,7 @@
 #include "cpp/declaration/specifier.hpp"
 #include "cpp/declaration/statement.hpp"
 #include "cpp/declaration/init_declarator_list.hpp"
+#include "cpp/comments.hpp"
 
 namespace cpp {
     // Function definition:
@@ -31,6 +32,7 @@ namespace cpp {
         explicit parameter_t(decl_specifier_seq_t decl_spec_sec, init_declarator_t init_decl)
             : decl_specifier_seq(decl_spec_sec),
               init_declarator(init_decl) {}
+        auto init_decl() const { return init_declarator; }
         void sequential_all(auto&& action) const {
             action(decl_specifier_seq);
             action(language::space);
@@ -65,6 +67,8 @@ namespace cpp {
             : noptr_declarator(std::move(declarator)),
               parameter_list(param_list),
               cv_qualifier(cv_qualifier) {}
+        auto noptr_decl() const { return noptr_declarator; }
+        auto param_list() const { return parameter_list; }
 
         void sequential_all(auto&& action) const {
             action(noptr_declarator);

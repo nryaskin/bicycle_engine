@@ -1,5 +1,6 @@
 #include "cppbuilder.hpp"
 #include "cpp/declaration/simple_declarator.hpp"
+#include "cpp/comments.hpp"
 
 namespace wayland::generator {
 
@@ -54,6 +55,7 @@ namespace wayland::generator {
             text << include;
             text << language::newline;
         }
+        text << language::newline;
 
         // cpp::Namespace ns("waylandcpp::interface");
         cpp::clas cl(interface.name);
@@ -85,10 +87,12 @@ namespace wayland::generator {
         //    cl.add(e);
         //}
 
+        cl.append(language::comment_t("Requests"));
         for (auto& req : gen_requests(interface.requests)) {
             cl.append(req);
         }
 
+        cl.append(language::comment_t("Events"));
         for (auto& event : gen_events(interface.events)) {
             cl.append(event);
         }
@@ -103,32 +107,38 @@ namespace wayland::generator {
         return text;
     }
 
-    //cpp::MethodBody Builder::gen_request_body(const cpp::Method& req) {
-    //     const std::string object_builder_def = std::format("waylandcpp::wire::WireObjectBuilder builder(id_, {});", op_code_name(req.name()));
-    //     static const std::string write = "s_.write(builder.data(), builder.size());";
-    //     cpp::MethodBody mb;
+    cpp::compound_statement_t Builder::gen_request_body(const cpp::function_declaration_t& req) {
+        auto shared_expr = [](auto s) { return std::make_shared<cpp::expression_statement_t>(s); };
+        cpp::compound_statement_t body;
+        auto op_name = op_code_name(std::get<cpp::unqid_t>(req.noptr_decl()).id());
+        auto object_builder_def = shared_expr(std::format("waylandcpp::wire::WireObjectBuilder builder(id_, {})", op_name).c_str());
+        static const auto write = shared_expr("s_.write(builder.data(), builder.size())");
 
-    //     mb.add(object_builder_def);
+        body.push_back(object_builder_def);
 
-    //     if (req.get_params().size() > 0) {
-    //         std::stringstream ss;
-    //         ss << "builder.add(";
-    //         bool comma = false;
-    //         for (const auto& p : req.get_params()) {
-    //             ss << (comma? ", " : "") << p.name();
-    //             comma = true;
-    //         }
-    //         ss << ");";
-    //         mb.add(ss.str());
-    //     }
+        if (req.param_list().size() > 0) {
+            std::stringstream ss;
+            ss << "builder.add(";
+            auto pl = req.param_list();
+            auto it = pl.begin();
+            ss << std::get<cpp::unqid_t>(it->init_decl().declarator()).id();
+            while (++it != pl.end()) {
+                auto name = std::get<cpp::unqid_t>(it->init_decl().declarator()).id();
+                ss << ", " << name;
+            }
+            //bool comma = false;
+            //for (const auto& p : req.param_list()) {
+            //    ss << (comma? ", " : "") << p.name();
+            //    comma = true;
+            //}
+            ss << ")";
+            body.push_back(shared_expr(ss.str()));
+        }
 
-    //     mb.add(write);
+        body.push_back(write);
 
-    //     return mb;
-    //}
-    //cpp::Definition Builder::gen_definition(const cpp::Class& cs, const cpp::Class::Ctr& ctr) {
-    //    return cpp::Definition(cs, ctr, gen_ctr_body(ctr));
-    //}
+        return body;
+    }
 
     cpp::parameter_list_t Builder::gen_parameters(const std::vector<WLArgument>& args) {
         cpp::parameter_list_t params;
@@ -136,7 +146,7 @@ namespace wayland::generator {
         for (const auto& arg : args) {
             cpp::decl_specifier_seq_t ds(wire_to_type(arg.type));
             cpp::init_declarator_t indecl(cpp::unqid_t(arg.name));
-            // NOTE: I am doing basic implementation here so I am not going to user enums in case there were enums specified in xml, but I am going to do it latter to have links between types in events and enums.
+            // NOTE: I am doing basic implementation here so I am not going to use enums in case there were enums specified in xml, but I am going to do it latter to have links between types in events and enums.
             params.emplace_back(ds, indecl);
         }
 
@@ -150,7 +160,7 @@ namespace wayland::generator {
             cpp::decl_specifier_seq_t ds(void_type);
             auto req_params = gen_parameters(req.arguments);
             cpp::function_declaration_t req_decl(cpp::unqid_t(req.name), req_params);
-            auto body = cpp::function_body_t({});
+            auto body = cpp::function_body_t(gen_request_body(req_decl));
             cpp::function_t function(ds, req_decl, body);
             methods.push_back(function);
         }
@@ -175,7 +185,7 @@ namespace wayland::generator {
         std::vector<cpp::function_t> methods;
 
         for (const auto& event : events) {
-            cpp::decl_specifier_seq_t ds(void_type);
+            cpp::decl_specifier_seq_t ds({ cpp::virtual_qualifier, void_type });
             auto event_params = gen_parameters(event.arguments);
             cpp::function_declaration_t event_decl(cpp::unqid_t(event.name), event_params);
             auto body = cpp::function_body_t({});
@@ -193,15 +203,21 @@ namespace wayland::generator {
         int counter = 0;
 
         for (const auto& req : interface.requests) {
-            cpp::init_declarator_list_t init_decl({cpp::unqid_t(op_code_name(req.name)), std::format("{:#04x}", counter++)});
             cpp::decl_specifier_seq_t decl_spec(cpp::static_specifier, cpp::constexpr_specifier, op_code_type.id().id());
+            cpp::init_declarator_list_t init_decl({cpp::unqid_t(op_code_name(req.name)), std::format("{:#04x}", counter++)});
             sds.emplace_back(decl_spec, init_decl);
         }
 
         counter = 0;
         for (const auto& ev : interface.events) {
-            cpp::init_declarator_list_t init_decl({cpp::unqid_t(op_code_name(ev.name)), std::format("{:#04x}", counter++)});
             cpp::decl_specifier_seq_t decl_spec(cpp::static_specifier, cpp::constexpr_specifier, op_code_type.id().id());
+            cpp::init_declarator_list_t init_decl({cpp::unqid_t(op_code_name(ev.name)), std::format("{:#04x}", counter++)});
+            sds.emplace_back(decl_spec, init_decl);
+        }
+
+        {
+            cpp::decl_specifier_seq_t decl_spec(socket_type);
+            cpp::init_declarator_list_t init_decl(cpp::lval_t(cpp::unqid_t("sock")));
             sds.emplace_back(decl_spec, init_decl);
         }
 

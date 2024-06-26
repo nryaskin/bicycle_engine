@@ -75,6 +75,7 @@ namespace cpp {
     class expression_statement_t : public statement_t {
     public:
         static constexpr auto trailer = language::semi_collon_t {};
+        explicit expression_statement_t(const std::string& expr) : expression_(expr) {}
         explicit expression_statement_t(expression_t expression) : expression_(expression) {}
          
         auto& expression() { return expression_; }
@@ -93,7 +94,9 @@ namespace cpp {
         void sequential_all(auto&& action) const {
             const statement_vec& vec = *this;
             action(language::open_curly_brace);
-            action(language::newline);
+            if (vec.size()) {
+                action(language::newline);
+            }
             for (auto& statement : vec) {
                 action(statement);
                 action(language::newline);

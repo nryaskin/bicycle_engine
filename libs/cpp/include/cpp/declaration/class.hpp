@@ -8,6 +8,7 @@
 #include "cpp/declaration/declarator.hpp"
 #include "cpp/declaration/function.hpp"
 #include "cpp/symbols.hpp"
+#include "cpp/declaration/enum.hpp"
 
 // class-key class-head-name final(optional) base-clause(optional) { member-specification }
 // class-key - class | struct | union
@@ -115,7 +116,7 @@ namespace cpp {
     using member_object_t = cpp::simple_declaration_t;
     using member_function_t = cpp::function_t;
 
-    using member_specification_element_t = std::variant<access_specifier_t, member_object_t, member_function_t, language::comment_t>;
+    using member_specification_element_t = std::variant<access_specifier_t, member_object_t, member_function_t, language::comment_t, enum_specifier_t>;
 
     class member_specification_t : public std::vector<member_specification_element_t> {
     public:

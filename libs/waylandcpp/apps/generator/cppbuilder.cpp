@@ -1,6 +1,7 @@
 #include "cppbuilder.hpp"
 #include "cpp/declaration/simple_declarator.hpp"
 #include "cpp/comments.hpp"
+#include "cpp/declaration/enum.hpp"
 
 namespace wayland::generator {
 
@@ -68,10 +69,7 @@ namespace wayland::generator {
         auto socket_param = cpp::parameter_t(socket_type, cpp::rval_t(sock));
         auto id_param = cpp::parameter_t(wire_to_type(wire_type::OBJECT), cpp::init_declarator_t(id, cpp::copy_initialization_t("0x0"))); 
         auto name_param = cpp::parameter_t(string_type, cpp::init_declarator_t(cpp::rval_t(name), cpp::copy_initialization_t("\"\"")));
-        cpp::parameter_list_t ctr_params;
-        ctr_params.push_back(socket_param);
-        ctr_params.push_back(id_param);
-        ctr_params.push_back(name_param);
+        cpp::parameter_list_t ctr_params ({socket_param, id_param, name_param});
 
         auto ctr_decl = cpp::function_declaration_t(cpp::unqid_t(interface.name), ctr_params);
         cpp::ctor_initializer_t ctor_init;
@@ -82,10 +80,9 @@ namespace wayland::generator {
         auto ctr = cpp::function_t(ctr_decl, ctr_body);
         cl.append(ctr);
 
-        //auto enums = gen_enums(interface.enums);
-        //for (auto& e : enums) {
-        //    cl.add(e);
-        //}
+        for (auto& e : gen_enums(interface.enums)) {
+            cl.append(e);
+        }
 
         cl.append(language::comment_t("Requests"));
         for (auto& req : gen_requests(interface.requests)) {
@@ -168,18 +165,19 @@ namespace wayland::generator {
         return methods;
     }
 
-    //std::vector<cpp::Enum> Builder::gen_enums(const std::vector<WLEnum>& enums) {
-    //    std::vector<cpp::Enum> es;
+    std::vector<cpp::enum_specifier_t> Builder::gen_enums(const std::vector<WLEnum>& enums) {
+        std::vector<cpp::enum_specifier_t> es;
 
-    //    for (const auto& e : enums) {
-    //        cpp::Enum em(e.name, wire_to_type(wire_type::INT));
-    //        for (const auto& entry : e.entries) {
-    //            em.add(cpp::Enum::Entity(entry.name, entry.value));
-    //        }
-    //    }
+        for (const auto& e : enums) {
+            cpp::enum_specifier_t em(e.name, wire_to_type(wire_type::INT));
+            for (const auto& entry : e.entries) {
+                em.add(cpp::enum_specifier_t::entity_t(entry.name, entry.value));
+            }
+            es.push_back(em);
+        }
 
-    //    return es;
-    //}
+        return es;
+    }
 
     std::vector<cpp::function_t> Builder::gen_events(const std::vector<WLEvent>& events) {
         std::vector<cpp::function_t> methods;

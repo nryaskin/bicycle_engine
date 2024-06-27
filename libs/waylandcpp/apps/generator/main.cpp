@@ -109,7 +109,6 @@ int main(int argc, char *argv[]) {
         std::vector<cpp::include_t> includes;
         includes.push_back(cpp::AngleInclusion("string"));
         includes.push_back(cpp::AngleInclusion("vector"));
-
         includes.push_back(cpp::QuoteInclusion("waylandcpp/wire/types.hpp"));
         includes.push_back(cpp::QuoteInclusion("waylandcpp/wire/socket.hpp"));
         includes.push_back(cpp::QuoteInclusion("waylandcpp/wire/object_builder.hpp"));

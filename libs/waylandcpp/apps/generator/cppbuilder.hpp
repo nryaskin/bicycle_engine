@@ -5,6 +5,7 @@
 #include "cpp/declaration/function.hpp"
 #include "cpp/declaration/class.hpp"
 #include "cpp/transform/text.hpp"
+#include "cpp/declaration/enum.hpp"
 
 namespace wayland::generator {
     class Builder {
@@ -27,6 +28,7 @@ namespace wayland::generator {
         std::vector<cpp::simple_declaration_t> gen_variables(const WLInterface& interface);
         cpp::parameter_list_t gen_parameters(const std::vector<WLArgument>&);
         cpp::compound_statement_t gen_request_body(const cpp::function_declaration_t& req);
+        std::vector<cpp::enum_specifier_t> gen_enums(const std::vector<WLEnum>& enums);
     };
 }
 

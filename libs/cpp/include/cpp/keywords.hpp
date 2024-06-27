@@ -130,8 +130,13 @@ namespace language {
         static constexpr std::string keyword = "union";
     };
 
-    class virtual_keyword_t {
+    class enum_keyword_t {
     public:
+        constexpr enum_keyword_t() {}
+        static constexpr std::string keyword = "enum";
+    };
+
+    class virtual_keyword_t { public:
         constexpr virtual_keyword_t() {}
         static constexpr std::string keyword = "virtual";
 
@@ -146,7 +151,7 @@ namespace language {
                                    default_keyword_t, goto_keyword_t,
                                    break_keyword_t, continue_keyword_t, return_keyword_t,
                                    public_keyword_t, protected_keyword_t, private_keyword_t,
-                                   class_keyword_t, struct_keyword_t, union_keyword_t,
+                                   class_keyword_t, struct_keyword_t, union_keyword_t, enum_keyword_t,
                                    virtual_keyword_t>;
 
     static constexpr keyword_t static_keyword = static_keyword_t {};
@@ -171,4 +176,5 @@ namespace language {
     static constexpr keyword_t struct_keyword = struct_keyword_t {};
     static constexpr keyword_t union_keyword = union_keyword_t {};
     static constexpr keyword_t virtual_keyword = virtual_keyword_t {};
+    static constexpr keyword_t enum_keyword = enum_keyword_t {};
 };

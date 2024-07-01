@@ -1,5 +1,4 @@
-#ifndef CPP_DECLARATION_DECLARATOR_H
-#define CPP_DECLARATION_DECLARATOR_H
+#pragma once
 
 #include <vector>
 #include <variant>
@@ -7,7 +6,6 @@
 
 #include "cpp/symbols.hpp"
 #include "cpp/specification.hpp"
-#include "cpp/format.hpp"
 
 namespace cpp {
     class general_id_t {
@@ -97,4 +95,3 @@ namespace cpp {
     using declarator_t = std::variant<unqid_t, qid_t, lval_t, rval_t>;
 }
 
-#endif /* CPP_DECLARATION_DECLARATOR_H */

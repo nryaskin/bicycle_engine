@@ -157,8 +157,8 @@ namespace cpp::formatter {
         do_for_all_derrived<cpp::label_statement_t,
                             cpp::expression_statement_t,
                             cpp::compound_statement_t,
-                            cpp::conditino_statement_t,
-                            cpp::iteration_statement_t>(stmt, print);
+                            cpp::switch_statement_t, cpp::if_statement_t,
+                            cpp::for_statement_t, while_statement_t>(stmt, print);
 
         return text;
     }

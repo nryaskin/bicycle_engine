@@ -7,6 +7,10 @@
 namespace waylandcpp::wire {
     class WireObjectBuilder {
     public:
+
+        WireObjectBuilder(wire_new_id_t id = 0,
+                          wire_op_t op_code = 0);
+
         WireObjectBuilder(wire_object_id_t id = 0,
                           wire_op_t op_code = 0);
 

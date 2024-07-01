@@ -9,6 +9,7 @@
 #include "cpp/symbols.hpp"
 #include "cpp/keywords.hpp"
 #include "cpp/specification.hpp"
+#include "cpp/declaration/declarator.hpp"
 #include "cpp/format.hpp"
 
 // constexpr static char  | * const a | = nullptr;
@@ -69,9 +70,11 @@ namespace cpp {
         cv_qualifier_t() {}
         void sequential_all(auto&& action) const {
             if (const_qualifier) {
+                action(language::space);
                 action(const_qualifier.value());
             }
             if (volatile_qualifier) {
+                action(language::space);
                 action(volatile_qualifier.value());
             }
         }
@@ -89,6 +92,8 @@ namespace cpp {
         std::string id_;
     };
 
+    // previously declared class enum name possibly qualified
+
     static constexpr auto static_specifier = static_specifier_t {};
     static constexpr auto extern_specifier = extern_specifier_t {};
     static constexpr auto constexpr_specifier = constexpr_specifier_t {};
@@ -102,7 +107,8 @@ namespace cpp {
                                      volatile_qualifier_t,
                                      const_qualifier_t,
                                      virtual_specifier_t,
-                                     simple_type_specifier_t>;
+                                     simple_type_specifier_t,
+                                     unqualified_id_t, qualified_id_t>;
 
     // Sequence of white space separated specifiers
     // vector

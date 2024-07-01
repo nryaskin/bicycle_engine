@@ -12,4 +12,4 @@ target_sources(waylandcpp
                 src/buffer_parser.cpp
                 src/buffer.cpp)
 target_compile_features(waylandcpp PUBLIC cxx_std_20)
-target_link_libraries(waylandcpp PUBLIC waylandcpp-common waylandcpp-generated-obj)
+target_link_libraries(waylandcpp PUBLIC waylandcpp-common waylandcpp-generated)

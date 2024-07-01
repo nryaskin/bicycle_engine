@@ -2,47 +2,52 @@
 #include "cpp/declaration/simple_declarator.hpp"
 #include "cpp/comments.hpp"
 #include "cpp/declaration/enum.hpp"
+#include "cpp/declaration/namespace.hpp"
 
 namespace wayland::generator {
 
-    std::string ns_prefix = "waylandcpp::wire::";
+    static cpp::unqid_t ns_prefix("wire");
+
+    inline bool is_essential(const std::string& interface) {
+        return interface == "wl_display" || interface == "wl_registry";
+    }
 
     std::string op_code_name(const std::string& orig) {
         return std::format("{}_op", orig);
     }
 
-    cpp::simple_type_specifier_t Builder::wire_to_type(wire_type type) {
+    cpp::specifier_t Builder::wire_to_type(wire_type type) {
         switch (type) {
             case wire_type::FD:
-                static cpp::simple_type_specifier_t wire_fd_type(ns_prefix + "wire_fd_t");
+                static cpp::qualified_id_t wire_fd_type(ns_prefix, cpp::unqid_t("wire_fd_t"));
                 return wire_fd_type;
                 break;
             case wire_type::FIXED:
-                static cpp::simple_type_specifier_t wire_fixed_type(ns_prefix + "wire_fixed_t");
+                static cpp::qualified_id_t wire_fixed_type(ns_prefix, cpp::unqid_t("wire_fixed_t"));
                 return wire_fixed_type;
                 break;
             case wire_type::INT:
-                static cpp::simple_type_specifier_t wire_int_type(ns_prefix +"wire_int_t");
+                static cpp::qualified_id_t wire_int_type(ns_prefix, cpp::unqid_t("wire_int_t"));
                 return wire_int_type;
                 break;
             case wire_type::UINT:
-                static cpp::simple_type_specifier_t wire_uint_type(ns_prefix + "wire_uint_t");
+                static cpp::qualified_id_t wire_uint_type(ns_prefix, cpp::unqid_t("wire_uint_t"));
                 return wire_uint_type;
                 break;
             case wire_type::NEW_ID:
-                static cpp::simple_type_specifier_t wire_new_id_type(ns_prefix + "wire_new_id_t");
+                static cpp::qualified_id_t wire_new_id_type(ns_prefix, cpp::unqid_t("wire_new_id_t"));
                 return wire_new_id_type;
                 break;
             case wire_type::OBJECT:
-                static cpp::simple_type_specifier_t wire_object_type(ns_prefix + "wire_object_id_t");
+                static cpp::qualified_id_t wire_object_type(ns_prefix, cpp::unqid_t("wire_object_id_t"));
                 return wire_object_type;
                 break;
             case wire_type::ARRAY:
-                static cpp::simple_type_specifier_t wire_array_type(ns_prefix + "wire_array_t");
+                static cpp::qualified_id_t wire_array_type(ns_prefix, cpp::unqid_t("wire_array_t"));
                 return wire_array_type;
                 break;
             case wire_type::STRING:
-                static cpp::simple_type_specifier_t wire_string_type(ns_prefix + "wire_string_t");
+                static cpp::qualified_id_t wire_string_type(ns_prefix, cpp::unqid_t("wire_string_t"));
                 return wire_string_type;
                 break;
         }
@@ -58,25 +63,31 @@ namespace wayland::generator {
         }
         text << language::newline;
 
-        // cpp::Namespace ns("waylandcpp::interface");
+
         cpp::clas cl(interface.name);
         cl.append(cpp::public_access);
 
         auto sock = cpp::unqid_t("sock");
         auto id = cpp::unqid_t("id");
-        auto name = cpp::unqid_t("name");
 
-        auto socket_param = cpp::parameter_t(socket_type, cpp::rval_t(sock));
+        auto socket_param = cpp::parameter_t(socket_type, cpp::lval_t(sock));
         auto id_param = cpp::parameter_t(wire_to_type(wire_type::OBJECT), cpp::init_declarator_t(id, cpp::copy_initialization_t("0x0"))); 
-        auto name_param = cpp::parameter_t(string_type, cpp::init_declarator_t(cpp::rval_t(name), cpp::copy_initialization_t("\"\"")));
-        cpp::parameter_list_t ctr_params ({socket_param, id_param, name_param});
+        cpp::parameter_list_t ctr_params ({socket_param, id_param});
 
-        auto ctr_decl = cpp::function_declaration_t(cpp::unqid_t(interface.name), ctr_params);
+
         cpp::ctor_initializer_t ctor_init;
-        for (auto& m : { sock, id, name }) {
+        for (auto& m : { sock, id }) {
             ctor_init.elements().emplace_back(m, m.id());
         }
+
+        if (!is_essential(interface.name)) {
+            auto name = cpp::unqid_t("name");
+            ctr_params.emplace_back(wire_to_type(wire_type::UINT), cpp::init_declarator_t(cpp::rval_t(name), cpp::copy_initialization_t("0x0")));
+            ctor_init.elements().emplace_back(name, name.id());
+        }
+
         cpp::function_body_t ctr_body({}, ctor_init);
+        auto ctr_decl = cpp::function_declaration_t(cpp::unqid_t(interface.name), ctr_params);
         auto ctr = cpp::function_t(ctr_decl, ctr_body);
         cl.append(ctr);
 
@@ -93,13 +104,17 @@ namespace wayland::generator {
         for (auto& event : gen_events(interface.events)) {
             cl.append(event);
         }
+        cl.append(gen_dispatcher(interface));
 
         cl.append(cpp::protected_access);
         for (auto& var : gen_variables(interface)) {
             cl.append(var);
         }
 
-        text << cl;
+        cpp::namespace_t ns("waylandcpp::interface");
+        ns.push_back(cl);
+
+        text << ns;
 
         return text;
     }
@@ -108,8 +123,8 @@ namespace wayland::generator {
         auto shared_expr = [](auto s) { return std::make_shared<cpp::expression_statement_t>(s); };
         cpp::compound_statement_t body;
         auto op_name = op_code_name(std::get<cpp::unqid_t>(req.noptr_decl()).id());
-        auto object_builder_def = shared_expr(std::format("waylandcpp::wire::WireObjectBuilder builder(id_, {})", op_name).c_str());
-        static const auto write = shared_expr("s_.write(builder.data(), builder.size())");
+        auto object_builder_def = shared_expr(std::format("wire::WireObjectBuilder builder(id, {})", op_name).c_str());
+        static const auto write = shared_expr("sock.write(builder.data(), builder.size())");
 
         body.push_back(object_builder_def);
 
@@ -169,7 +184,7 @@ namespace wayland::generator {
         std::vector<cpp::enum_specifier_t> es;
 
         for (const auto& e : enums) {
-            cpp::enum_specifier_t em(e.name, wire_to_type(wire_type::INT));
+            cpp::enum_specifier_t em(e.name);
             for (const auto& entry : e.entries) {
                 em.add(cpp::enum_specifier_t::entity_t(entry.name, entry.value));
             }
@@ -194,31 +209,105 @@ namespace wayland::generator {
         return methods;
     }
 
+
     std::vector<cpp::simple_declaration_t> Builder::gen_variables(const WLInterface& interface) {
         std::vector<cpp::simple_declaration_t> sds;
         auto ns = cpp::unqid_t(ns_prefix);
-        static cpp::qualified_id_t op_code_type(ns, cpp::unqid_t("wire_op_t"));
+        static cpp::qid_t op_code_type(ns, cpp::unqid_t("wire_op_t"));
         int counter = 0;
 
+        auto add_field = [&] (auto type, auto id) {
+            cpp::decl_specifier_seq_t decl_spec(type);
+            cpp::init_declarator_list_t init_decl(id);
+            sds.emplace_back(decl_spec, init_decl);
+        };
+
         for (const auto& req : interface.requests) {
-            cpp::decl_specifier_seq_t decl_spec(cpp::static_specifier, cpp::constexpr_specifier, op_code_type.id().id());
+            cpp::decl_specifier_seq_t decl_spec(cpp::static_specifier, cpp::constexpr_specifier, op_code_type);
             cpp::init_declarator_list_t init_decl({cpp::unqid_t(op_code_name(req.name)), std::format("{:#04x}", counter++)});
             sds.emplace_back(decl_spec, init_decl);
         }
 
         counter = 0;
         for (const auto& ev : interface.events) {
-            cpp::decl_specifier_seq_t decl_spec(cpp::static_specifier, cpp::constexpr_specifier, op_code_type.id().id());
+            cpp::decl_specifier_seq_t decl_spec(cpp::static_specifier, cpp::constexpr_specifier, op_code_type);
             cpp::init_declarator_list_t init_decl({cpp::unqid_t(op_code_name(ev.name)), std::format("{:#04x}", counter++)});
             sds.emplace_back(decl_spec, init_decl);
         }
 
-        {
-            cpp::decl_specifier_seq_t decl_spec(socket_type);
-            cpp::init_declarator_list_t init_decl(cpp::lval_t(cpp::unqid_t("sock")));
-            sds.emplace_back(decl_spec, init_decl);
+        add_field(socket_type, cpp::lval_t(cpp::unqid_t("sock")));
+        add_field(wire_to_type(wire_type::OBJECT), cpp::unqid_t("id"));
+
+        if (!is_essential(interface.name)) {
+            add_field(wire_to_type(wire_type::UINT), cpp::unqid_t("name"));
         }
 
         return sds;
+    }
+
+    cpp::function_t Builder::gen_dispatcher(const WLInterface& interface) {
+        cpp::decl_specifier_seq_t ds(void_type);
+
+        cpp::parameter_list_t params;
+        {
+            auto ns = cpp::unqid_t(ns_prefix);
+            static cpp::qid_t op_code_type(ns, cpp::unqid_t("wire_op_t"));
+            cpp::decl_specifier_seq_t op_type(op_code_type);
+            cpp::init_declarator_t    op_decl(cpp::unqid_t("op"));
+            params.emplace_back(op_type, op_decl);
+
+            auto wbp = cpp::unqid_t("wire::WireBufferParser");
+            cpp::decl_specifier_seq_t body_type(wbp);
+            cpp::init_declarator_t    body(cpp::lval_t(cpp::unqid_t("body")));
+            params.emplace_back(body_type, body);
+        }
+        cpp::function_declaration_t req_decl(cpp::unqid_t("dispatch"), params);
+
+        auto switch_body = std::make_shared<cpp::compound_statement_t>();
+        for (auto& event : interface.events) {
+            switch_body->push_back(std::make_shared<cpp::label_statement_t>(cpp::label_statement_t::label_t::CASE, op_code_name(event.name)));
+            auto case_body = std::make_shared<cpp::compound_statement_t>();
+
+            std::stringstream auto_;
+            std::stringstream parse;
+            std::stringstream call;
+            call << event.name << "(";
+            if (event.arguments.size() > 0) {
+                auto_ << "auto [";
+                parse << "body.parse<";
+                auto it = event.arguments.begin();
+                auto add_new = [&](auto arg) {
+                    // Doing it like this for now because enum, function and parameters can have same name in xml.
+                    auto value_name = arg.name + "_v";
+                    auto_ << value_name;
+                    auto type = std::get<cpp::qid_t>(wire_to_type(arg.type));
+                    parse << ns_prefix.id() << "::" << type.id().id();
+                    call << value_name;
+                };
+                add_new(*it);
+
+                while (++it != event.arguments.end()) {
+                    auto_ << ",";
+                    parse << ",";
+                    call  << ",";
+                    add_new(*it);
+                }
+                parse << ">()";
+                auto_ << "] = " << parse.str();
+                case_body->push_back(std::make_shared<cpp::expression_statement_t>(auto_.str()));
+            }
+            call << ")";
+            case_body->push_back(std::make_shared<cpp::expression_statement_t>(call.str()));
+            switch_body->push_back(case_body);
+            switch_body->push_back(std::make_shared<cpp::jump_statement_t>(cpp::jump_statement_t::jump_t::BREAK));
+        }
+        auto dispatch_switch = std::make_shared<cpp::switch_statement_t>(cpp::expression_t("op"), switch_body);
+
+        cpp::compound_statement_t function_body;
+        function_body.push_back(dispatch_switch);
+        auto body = cpp::function_body_t(function_body);
+
+        cpp::function_t dispatch_f(ds, req_decl, body);
+        return dispatch_f;
     }
 }

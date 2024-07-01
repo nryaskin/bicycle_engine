@@ -169,7 +169,7 @@ namespace cpp {
         statement_ptr                   statement_;
     };
 
-    using conditino_statement_t = std::variant<if_statement_t, switch_statement_t>;
+    using condition_statement_t = std::variant<if_statement_t, switch_statement_t>;
 
     class while_statement_t : public statement_t {
     public:

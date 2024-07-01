@@ -1,6 +1,7 @@
 #include "waylandcpp/wire/object_builder.hpp"
 
 namespace waylandcpp::wire {
+
     WireObjectBuilder::WireObjectBuilder(wire_object_id_t id,
                                          wire_op_t op_code)
     : index(0),

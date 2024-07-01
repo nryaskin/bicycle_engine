@@ -83,13 +83,15 @@ namespace waylandcpp::wire {
 
     class wire_object_id_t {
     public:
+        wire_object_id_t(uint32_t val = 0) : value(val) {}
+        wire_object_id_t(const wire_new_id_t& new_id) : value(new_id.value) {} 
+
         std::size_t size() const { return sizeof(decltype(value)) / sizeof(uint32_t); }
 
         void put(WireBuffer& wb, int start) {
             std::memcpy(&wb[start], &value, size());
         }
 
-        wire_object_id_t(uint32_t val = 0) : value(val) {}
         uint32_t value;
 
         auto operator<=>(const wire_object_id_t&) const = default;

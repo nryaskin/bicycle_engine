@@ -121,9 +121,8 @@ namespace cpp {
     class member_specification_t : public std::vector<member_specification_element_t> {
     public:
         void sequential_all(auto&& action) const {
-            auto it = begin();
-            while(++it != end()) {
-                action(*it);
+            for(auto mse : *this) {
+                action(mse);
                 action(language::newline);
             }
         }

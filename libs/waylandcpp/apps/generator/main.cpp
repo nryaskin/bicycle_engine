@@ -92,13 +92,13 @@ int main(int argc, char *argv[]) {
             throw std::runtime_error(std::format("Cannot open file)"));
         }
         auto header_dir = args.output / "include" / "waylandcpp";
-        auto source_dir = args.output / "src";
+        //auto source_dir = args.output / "src";
 
-        f << "set(GENERATED_SOURCES ";
-        for (auto& interface : interfaces) {
-            f << std::format("{}.cpp\n", std::string("src/") + interface.name);
-        }
-        f << ")\n\n";
+        //f << "set(GENERATED_SOURCES ";
+        //for (auto& interface : interfaces) {
+        //    f << std::format("{}.cpp\n", std::string("src/") + interface.name);
+        //}
+        //f << ")\n\n";
 
         f << "set(GENERATED_HEADERS ";
         for (auto& interface : interfaces) {
@@ -112,6 +112,7 @@ int main(int argc, char *argv[]) {
         includes.push_back(cpp::QuoteInclusion("waylandcpp/wire/types.hpp"));
         includes.push_back(cpp::QuoteInclusion("waylandcpp/wire/socket.hpp"));
         includes.push_back(cpp::QuoteInclusion("waylandcpp/wire/object_builder.hpp"));
+        includes.push_back(cpp::QuoteInclusion("waylandcpp/wire/buffer_parser.hpp"));
 
         wayland::generator::Builder builder(includes);
 
@@ -123,16 +124,17 @@ int main(int argc, char *argv[]) {
         std::filesystem::create_directory(header_dir.parent_path());
         std::filesystem::create_directory(header_dir);
 
-        auto source_dir = args.output / "src";
-        std::filesystem::create_directory(source_dir);
+        //auto source_dir = args.output / "src";
+        //std::filesystem::create_directory(source_dir);
 
         for (const auto& interface : interfaces) {
             auto text = builder.build(interface);
 
             auto header_file = header_dir / interface.name;
-            std::cout << "HEADER: " << header_file << std::endl;
-            std::cout << text << std::endl;
-            // text.to_file(header_file);
+            header_file.replace_extension("hpp");
+            //std::cout << "HEADER: " << header_file << std::endl;
+            //std::cout << text << std::endl;
+            text.to_file(header_file);
         }
 
     }

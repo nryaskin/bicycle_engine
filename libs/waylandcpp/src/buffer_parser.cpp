@@ -5,8 +5,8 @@ namespace waylandcpp::wire {
 
     WireBufferParser::WireBufferParser(WireBuffer& buffer) : buffer_(buffer) {}
 
-    WireBufferParser::Event WireBufferParser::event() {
-        WireBufferParser::Event ev;
+    Event WireBufferParser::event() {
+        Event ev;
         ev.id = buffer_[index++];
         wire_word_t size_op = buffer_[index++];
         ev.op_code = size_op & 0x0000FFFF;

@@ -21,6 +21,7 @@ namespace cpp {
             std::string value;
         };
 
+        explicit enum_specifier_t(const std::string& name) : name(name) {}
         explicit enum_specifier_t(const std::string& name, auto&& base)
             : name(name), base(base) {}
 
@@ -53,6 +54,7 @@ namespace cpp {
                 action(language::newline);
             }
             action(language::close_curly_brace);
+            action(language::semi_collon);
         }
 
     private:

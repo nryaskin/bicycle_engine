@@ -3,29 +3,36 @@
 
 #include <string>
 #include <vector>
-#include "simple_decl.hpp"
-#include "function.hpp"
-#include "class.hpp"
-#include "container.hpp"
+#include "cpp/keywords.hpp"
+#include "cpp/declaration/simple_declarator.hpp"
+#include "cpp/declaration/function.hpp"
+#include "cpp/declaration/class.hpp"
 
 namespace cpp {
 
-    class Namespace : public Container<SimpleDeclaration, Function, Class, Namespace> {
+    class namespace_t;
+    using ns_body = std::variant<simple_declaration_t, function_t, clas, namespace_t>;
+
+    class namespace_t : public std::vector<ns_body> {
     public:
-        static constexpr std::string keyword = "namespace";
-        Namespace() = default;
-        Namespace(const std::string& id) : id_(id) {}
-        Namespace(const Namespace&) = default;
-        Namespace& operator=(const Namespace&) = default;
-
-        const std::string& id() const { return id_; }
-
-        friend class Definition;
-        friend class Source;
-        friend Document& operator<<(Document& doc, const Namespace& header);
+        namespace_t(const std::string& ns_name) : ns_name(ns_name) {}
+        void sequential_all(auto&& action) const {
+            action(language::namespace_keyword);
+            action(language::space);
+            action(ns_name);
+            action(language::space);
+            action(language::open_curly_brace);
+            action(language::newline);
+            for (auto& decl : *this) {
+                action(decl);
+                action(language::newline);
+            }
+            action(language::close_curly_brace);
+        }
     private:
-        std::string id_ = "";
+        std::string ns_name;
     };
+
 };
 
 #endif /* CPP_NAMESPACE_H */

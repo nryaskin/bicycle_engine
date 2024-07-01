@@ -75,7 +75,6 @@ namespace cpp {
             action(language::open_brace);
             action(parameter_list);
             action(language::close_brace);
-            action(language::space);
             action(cv_qualifier);
         }
     private:
@@ -135,8 +134,8 @@ namespace cpp {
         void sequential_all(auto&& action) const {
             if (ctor_init) {
                 action(ctor_init.value());
+                action(language::space);
             }
-            action(language::space);
             action(compound_statement);
         }
 

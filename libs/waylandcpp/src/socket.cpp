@@ -5,6 +5,8 @@
 #include <cstring>
 #include <iostream>
 #include <unistd.h>
+#include <cerrno>
+#include <format>
 
 
 namespace waylandcpp::wire {
@@ -18,16 +20,20 @@ namespace waylandcpp::wire {
     WLSocket::WLSocket() {
         int ret;
         fd = socket(AF_UNIX, SOCK_STREAM, 0);        
-        assert(fd >= 0);
+        if (fd < 0) {
+            throw std::runtime_error("Cannot open socket");
+        }
         addr.sun_family = AF_UNIX;
-        std::strncpy(addr.sun_path, WAYLAND_DISPLAY.c_str(), WAYLAND_DISPLAY.size());
+        std::strncpy(addr.sun_path, WAYLAND_DISPLAY.data(), WAYLAND_DISPLAY.size() + 1);
         ret = connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(decltype(addr))); 
         assert_err(ret);
     }
 
     void WLSocket::write(const uint8_t* data, uint32_t size) {
         int ret = ::write(fd, data, size);
-        assert_err(ret);
+        if (ret < 0) {
+            throw std::runtime_error(std::format("Error while write: {:x}, {}", errno, std::strerror(errno)));
+        }
     }
 
     std::vector<uint8_t> WLSocket::read() {

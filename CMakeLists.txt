@@ -5,6 +5,7 @@ project(BicycleEngine
         DESCRIPTION "Different graphics api's playground"
         LANGUAGES CXX C)
 
+add_compile_options("-fdiagnostics-show-template-tree")
 include(cmake/checks.cmake)
 check_not_source()
 

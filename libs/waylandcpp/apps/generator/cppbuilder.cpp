@@ -1,3 +1,5 @@
+#include <cctype>
+
 #include "cppbuilder.hpp"
 #include "cpp/declaration/simple_declarator.hpp"
 #include "cpp/comments.hpp"
@@ -181,7 +183,12 @@ namespace wayland::generator {
         for (const auto& e : enums) {
             cpp::enum_specifier_t em(e.name);
             for (const auto& entry : e.entries) {
-                em.add(cpp::enum_specifier_t::entity_t(entry.name, entry.value));
+                auto name = entry.name;
+                if (std::isdigit(name[0])) {
+                    name = "_" + name;
+                }
+                auto value = entry.value;
+                em.add(cpp::enum_specifier_t::entity_t(name, value));
             }
             es.push_back(em);
         }
@@ -207,8 +214,8 @@ namespace wayland::generator {
                     while (++arg != event.arguments.end()) {
                         call_ss << ", " << arg->name;
                     }
-                    call_ss << ")";
                 }
+                call_ss << ")";
                 cpp::statement_ptr call_callback = std::make_shared<cpp::expression_statement_t>(call_ss.str());
                 body.push_back(std::make_shared<cpp::if_statement_t>(cpp::condition_t(callback_name), call_callback));
             }
@@ -337,16 +344,16 @@ namespace wayland::generator {
         std::vector<cpp::type_alias_t> aliases;
         for (auto& event : events) {
             std::string type_id;
+            std::stringstream ss;
             if (event.arguments.size() > 0) {
                 auto type_list = get_types_list(event.arguments);
                 auto tl_id = type_list.begin();
-                std::stringstream ss;
                 ss << *tl_id;
                 while (++tl_id < type_list.end()) {
                     ss << ", " << *tl_id;
                 }
-                type_id = std::format("callback_t<{}>", ss.str());
             }
+            type_id = std::format("callback_t<{}>", ss.str());
             aliases.emplace_back(alias_type(event.name), type_id);
         }
         return aliases;

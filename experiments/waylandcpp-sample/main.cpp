@@ -34,6 +34,17 @@ public:
         else throw std::runtime_error("Cannot insert new wayland object");
     }
 
+    template<typename wayland_type>
+    wayland_type& create(auto& socket, int id, auto&& f1, auto&& f2){
+        ++max_id;
+        wayland_type object(socket, id, f1, f2);
+        auto [it, inserted] = objects.emplace(std::make_pair(max_id, object));
+        if (inserted) {
+            return std::get<wayland_type>(it->second);
+        }
+        else throw std::runtime_error("Cannot insert new wayland object");
+    }
+
     void dispatch(native_id id, ww::Event& ev) {
         if (auto it = objects.find(id); it != objects.end()) {
             std::visit([&](auto&& wl_obj) {
@@ -59,7 +70,10 @@ int main() {
     ww::WLSocket socket;
     auto& display = wayctx.create<wi::wl_display>(socket, 1);
     display.get_registry(2);
-    auto& registry = wayctx.create<wi::wl_registry>(socket, 2);
+    auto& registry = wayctx.create<wi::wl_registry>(socket, 2, 
+            [](auto name, auto interface, auto version) {
+                std::cout << std::format("name: {}, interface: {}, version: {}", name.value, interface.value, version.value) << std::endl;
+            }, [](auto name) {});
     display.sync(3);
     auto& callback = wayctx.create<wi::wl_callback>(socket, 3);
 

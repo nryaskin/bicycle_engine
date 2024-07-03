@@ -134,6 +134,7 @@ namespace cpp {
             }
             action(condition_);
             action(language::close_brace);
+            action(language::newline);
             action(statement_);
         }
     private:

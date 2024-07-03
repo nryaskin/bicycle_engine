@@ -20,6 +20,7 @@ namespace cpp {
 
         void sequential_all(auto&& action) const {
             action(directive);
+            action(language::space);
             action(language::open_angle);
             action(file);
             action(language::close_angle);
@@ -32,6 +33,7 @@ namespace cpp {
         QuoteInclusion(const std::string& name) { file = name; }
         void sequential_all(auto&& action) const {
             action(directive);
+            action(language::space);
             action(language::double_quote);
             action(file);
             action(language::double_quote);

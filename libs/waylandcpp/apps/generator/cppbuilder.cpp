@@ -16,6 +16,14 @@ namespace wayland::generator {
         return std::format("{}_op", orig);
     }
 
+    std::string alias_type(const std::string& name) {
+        return std::format("{}_cb_t", name);
+    }
+
+    std::string alias_name(const std::string& name) {
+        return std::format("{}_cb", name);
+    }
+
     cpp::specifier_t Builder::wire_to_type(wire_type type) {
         switch (type) {
             case wire_type::FD:
@@ -67,29 +75,16 @@ namespace wayland::generator {
         cpp::clas cl(interface.name);
         cl.append(cpp::public_access);
 
+        for (auto& cb_type : gen_callback_types(interface.events)) {
+            cl.append(cb_type);
+        }
+
         auto sock = cpp::unqid_t("sock");
         auto id = cpp::unqid_t("id");
 
-        auto socket_param = cpp::parameter_t(socket_type, cpp::lval_t(sock));
-        auto id_param = cpp::parameter_t(wire_to_type(wire_type::OBJECT), cpp::init_declarator_t(id, cpp::copy_initialization_t("0x0"))); 
-        cpp::parameter_list_t ctr_params ({socket_param, id_param});
-
-
-        cpp::ctor_initializer_t ctor_init;
-        for (auto& m : { sock, id }) {
-            ctor_init.elements().emplace_back(m, m.id());
+        for (auto& ctr : gen_constructors(interface)) {
+            cl.append(ctr);
         }
-
-        if (!is_essential(interface.name)) {
-            auto name = cpp::unqid_t("name");
-            ctr_params.emplace_back(wire_to_type(wire_type::UINT), cpp::init_declarator_t(cpp::rval_t(name), cpp::copy_initialization_t("0x0")));
-            ctor_init.elements().emplace_back(name, name.id());
-        }
-
-        cpp::function_body_t ctr_body({}, ctor_init);
-        auto ctr_decl = cpp::function_declaration_t(cpp::unqid_t(interface.name), ctr_params);
-        auto ctr = cpp::function_t(ctr_decl, ctr_body);
-        cl.append(ctr);
 
         for (auto& e : gen_enums(interface.enums)) {
             cl.append(e);
@@ -104,7 +99,7 @@ namespace wayland::generator {
         for (auto& event : gen_events(interface.events)) {
             cl.append(event);
         }
-        cl.append(gen_dispatcher(interface));
+        cl.append(gen_dispatcher(interface.events));
 
         cl.append(cpp::protected_access);
         for (auto& var : gen_variables(interface)) {
@@ -201,9 +196,23 @@ namespace wayland::generator {
             cpp::decl_specifier_seq_t ds({ cpp::virtual_qualifier, void_type });
             auto event_params = gen_parameters(event.arguments);
             cpp::function_declaration_t event_decl(cpp::unqid_t(event.name), event_params);
-            auto body = cpp::function_body_t({});
-            cpp::function_t function(ds, event_decl, body);
-            methods.push_back(function);
+            cpp::compound_statement_t body;
+            {
+                auto callback_name = alias_name(event.name);
+                std::stringstream call_ss;
+                call_ss << callback_name << "(";
+                if (event.arguments.size() > 0) {
+                    auto arg = event.arguments.begin();
+                    call_ss << arg->name;
+                    while (++arg != event.arguments.end()) {
+                        call_ss << ", " << arg->name;
+                    }
+                    call_ss << ")";
+                }
+                cpp::statement_ptr call_callback = std::make_shared<cpp::expression_statement_t>(call_ss.str());
+                body.push_back(std::make_shared<cpp::if_statement_t>(cpp::condition_t(callback_name), call_callback));
+            }
+            methods.emplace_back(ds, event_decl, body);
         }
 
         return methods;
@@ -242,10 +251,14 @@ namespace wayland::generator {
             add_field(wire_to_type(wire_type::UINT), cpp::unqid_t("name"));
         }
 
+        for (const auto& ev : interface.events) {
+            add_field(cpp::unqid_t(alias_type(ev.name)), cpp::unqid_t(alias_name(ev.name)));
+        }
+
         return sds;
     }
 
-    cpp::function_t Builder::gen_dispatcher(const WLInterface& interface) {
+    cpp::function_t Builder::gen_dispatcher(const std::vector<WLEvent>& events) {
         cpp::decl_specifier_seq_t ds(void_type);
 
         cpp::parameter_list_t params;
@@ -264,7 +277,7 @@ namespace wayland::generator {
         cpp::function_declaration_t req_decl(cpp::unqid_t("dispatch"), params);
 
         auto switch_body = std::make_shared<cpp::compound_statement_t>();
-        for (auto& event : interface.events) {
+        for (auto& event : events) {
             switch_body->push_back(std::make_shared<cpp::label_statement_t>(cpp::label_statement_t::label_t::CASE, op_code_name(event.name)));
             auto case_body = std::make_shared<cpp::compound_statement_t>();
 
@@ -309,5 +322,81 @@ namespace wayland::generator {
 
         cpp::function_t dispatch_f(ds, req_decl, body);
         return dispatch_f;
+    }
+
+    std::vector<std::string> Builder::get_types_list(const std::vector<WLArgument>& arguments) {
+        std::vector<std::string> types;
+        for (auto arg : arguments) {
+            auto type = std::get<cpp::qid_t>(wire_to_type(arg.type));
+            types.emplace_back(std::format("{}::{}", ns_prefix.id(), type.id().id()));
+        }
+        return types;
+    }
+
+    std::vector<cpp::type_alias_t> Builder::gen_callback_types(const std::vector<WLEvent>& events) {
+        std::vector<cpp::type_alias_t> aliases;
+        for (auto& event : events) {
+            std::string type_id;
+            if (event.arguments.size() > 0) {
+                auto type_list = get_types_list(event.arguments);
+                auto tl_id = type_list.begin();
+                std::stringstream ss;
+                ss << *tl_id;
+                while (++tl_id < type_list.end()) {
+                    ss << ", " << *tl_id;
+                }
+                type_id = std::format("callback_t<{}>", ss.str());
+            }
+            aliases.emplace_back(alias_type(event.name), type_id);
+        }
+        return aliases;
+    }
+
+    std::vector<cpp::function_t> Builder::gen_constructors(const WLInterface& interface) {
+        std::vector<cpp::function_t> ctrs;
+
+        auto sock = cpp::unqid_t("sock");
+        auto id = cpp::unqid_t("id");
+
+        auto socket_param = cpp::parameter_t(socket_type, cpp::lval_t(sock));
+        auto id_param = cpp::parameter_t(wire_to_type(wire_type::OBJECT), cpp::init_declarator_t(id, cpp::copy_initialization_t("0x0"))); 
+
+        cpp::parameter_list_t ctr_params ({socket_param, id_param});
+        cpp::ctor_initializer_t ctor_init;
+        for (auto& m : { sock, id }) {
+            ctor_init.elements().emplace_back(m, m.id());
+        }
+
+        if (!is_essential(interface.name)) {
+            auto name = cpp::unqid_t("name");
+            ctr_params.emplace_back(wire_to_type(wire_type::UINT), cpp::init_declarator_t(cpp::rval_t(name), cpp::copy_initialization_t("0x0")));
+            ctor_init.elements().emplace_back(name, name.id());
+        }
+
+        cpp::function_body_t ctr_body({}, ctor_init);
+        auto ctr_decl = cpp::function_declaration_t(cpp::unqid_t(interface.name), ctr_params);
+        ctrs.emplace_back(ctr_decl, ctr_body);
+
+
+        id_param = cpp::parameter_t(wire_to_type(wire_type::OBJECT), id); 
+        cpp::parameter_list_t ctr2_params({socket_param, id_param});
+
+        for (const auto& ev : interface.events) {
+            auto uniq_name = cpp::unqid_t(alias_name(ev.name));
+            auto n = cpp::rval_t(uniq_name);
+            ctr2_params.emplace_back(cpp::unqid_t(alias_type(ev.name)), n);
+            ctor_init.elements().emplace_back(uniq_name, alias_name(ev.name));
+        }
+
+        if (!is_essential(interface.name)) {
+            auto name = cpp::unqid_t("name");
+            ctr2_params.emplace_back(wire_to_type(wire_type::UINT), cpp::init_declarator_t(cpp::rval_t(name), cpp::copy_initialization_t("0x0")));
+        }
+
+        cpp::function_body_t ctr2_body({}, ctor_init);
+        ctr_decl = cpp::function_declaration_t(cpp::unqid_t(interface.name), ctr2_params);
+        ctrs.emplace_back(ctr_decl, ctr2_body);
+
+        return ctrs;
     }
 }

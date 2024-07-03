@@ -6,6 +6,7 @@
 #include "cpp/declaration/class.hpp"
 #include "cpp/transform/text.hpp"
 #include "cpp/declaration/enum.hpp"
+#include "cpp/declaration/type_alias.hpp"
 
 namespace wayland::generator {
     class Builder {
@@ -26,10 +27,13 @@ namespace wayland::generator {
         std::vector<cpp::function_t> gen_requests(const std::vector<WLRequest>&);
         std::vector<cpp::function_t> gen_events(const std::vector<WLEvent>&);
         std::vector<cpp::simple_declaration_t> gen_variables(const WLInterface& interface);
-        cpp::function_t gen_dispatcher(const WLInterface& interface);
+        std::vector<cpp::type_alias_t> gen_callback_types(const std::vector<WLEvent>& events);
+        std::vector<std::string> get_types_list(const std::vector<WLArgument>& arguments);
+        cpp::function_t gen_dispatcher(const std::vector<WLEvent>& events);
         cpp::parameter_list_t gen_parameters(const std::vector<WLArgument>&);
         cpp::compound_statement_t gen_request_body(const cpp::function_declaration_t& req);
         std::vector<cpp::enum_specifier_t> gen_enums(const std::vector<WLEnum>& enums);
+        std::vector<cpp::function_t> gen_constructors(const WLInterface& interface);
     };
 }
 

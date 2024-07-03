@@ -113,6 +113,7 @@ int main(int argc, char *argv[]) {
         includes.push_back(cpp::QuoteInclusion("waylandcpp/wire/socket.hpp"));
         includes.push_back(cpp::QuoteInclusion("waylandcpp/wire/object_builder.hpp"));
         includes.push_back(cpp::QuoteInclusion("waylandcpp/wire/buffer_parser.hpp"));
+        includes.push_back(cpp::QuoteInclusion("waylandcpp/callback.hpp"));
 
         wayland::generator::Builder builder(includes);
 

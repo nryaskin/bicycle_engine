@@ -21,8 +21,8 @@ namespace waylandcpp::wire {
         wire_string_t string();
 
         template<typename ...Types>
-        auto parse() {
-            return std::make_tuple(get<Types>()...);
+        std::tuple<Types...> parse() {
+            return { get<Types>()...};
         }
 
         template<typename wire_type>
@@ -33,7 +33,6 @@ namespace waylandcpp::wire {
             if constexpr (std::is_same_v<wire_type, wire_uint_t>) {
                 return uint();
             }
-
             if constexpr (std::is_same_v<wire_type, wire_string_t>) {
                 return string();
             }
